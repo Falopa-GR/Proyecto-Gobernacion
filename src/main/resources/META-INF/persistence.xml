@@ -2,26 +2,27 @@
 
     <persistence-unit name="talentoPU">
 
-        <!-- Proveedor Hibernate -->
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
         <!-- ENTIDADES -->
         <class>model.PublicServer</class>
         <class>model.Position</class>
+        <class>model.Dependency</class>
+        <class>model.AdministrativeSituation</class>
+        <class>model.VacationPeriod</class>
+        <class>model.WelfareRecord</class>
+        <class>model.OccupationalHealth</class>
+        <class>model.PerformanceEvaluation</class>
 
         <properties>
-            <!-- CONEXIÓN -->
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5433/talento_humano"/>
-            <property name="jakarta.persistence.jdbc.user" value="postgres"/>
+            <property name="jakarta.persistence.jdbc.url"      value="jdbc:postgresql://localhost:5432/talento_humano"/>
+            <property name="jakarta.persistence.jdbc.user"     value="postgres"/>
             <property name="jakarta.persistence.jdbc.password" value="12345"/>
-            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="jakarta.persistence.jdbc.driver"   value="org.postgresql.Driver"/>
 
-            <!-- AUTO CREATE TABLES -->
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
-
-            <!-- DEBUG -->
-            <property name="hibernate.show_sql" value="true"/>
-            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.hbm2ddl.auto"  value="update"/>
+            <property name="hibernate.show_sql"       value="true"/>
+            <property name="hibernate.format_sql"     value="true"/>
         </properties>
 
     </persistence-unit>
