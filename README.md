@@ -12,7 +12,7 @@ Sistema de escritorio desarrollado en **Java Swing** para la gestión integral d
 - Instalación y Configuración
 - Credenciales por Defecto
 - Roles y Permisos
-- Estructura del Proyecto
+  
 
 ---
 
@@ -169,39 +169,5 @@ Hibernate creará automáticamente todas las tablas al iniciar (`hbm2ddl.auto=up
 
 ---
 
-##Estructura del Proyecto
 
-```
-src/main/java/
-├── org/example/
-│   └── Main.java                        # Punto de entrada
-├── model/
-│   ├── User.java                        # Usuario del sistema
-│   ├── PublicServer.java                # Servidor público
-│   ├── Dependency.java                  # Dependencia organizacional
-│   ├── Position.java                    # Cargo
-│   ├── AdministrativeSituation.java     # Situación administrativa
-│   ├── VacationPeriod.java              # Período vacacional
-│   ├── WelfareRecord.java               # Registro de bienestar
-│   ├── OccupationalHealth.java          # Salud ocupacional
-│   └── PerformanceEvaluation.java       # Evaluación de desempeño
-├── dao/
-│   ├── GenericDao.java                  # DAO base genérico
-│   ├── PublicServerDAO.java             # Operaciones de servidor público
-│   ├── AdministrativeSituationDAO.java  # Operaciones de situaciones
-│   └── VacationPeriodDAO.java           # Operaciones de vacaciones
-├── service/
-│   ├── AuthService.java                 # Autenticación y roles
-│   ├── ExportService.java               # Exportación Excel / PDF
-│   └── OverlappingSituationException.java
-├── view/
-│   ├── LoginWindow.java                 # Pantalla de inicio de sesión
-│   ├── DashboardWindow.java             # Dashboard principal (RF-07)
-│   ├── PublicServerWindow.java          # Planta de personal (RF-01)
-│   ├── AdministrativeSituationWindow.java # Situaciones (RF-02)
-│   ├── VacationWindow.java              # Vacaciones (RF-03)
-│   ├── ServerProfileWindow.java         # Perfil integrado (RF-08)
-│   └── MainWindow.java
-└── util/
-    └── JPAUtil.java                     # Fábrica de EntityManager
-```
+
