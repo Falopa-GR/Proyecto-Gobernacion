@@ -1,10 +1,10 @@
--Sistema de Gestión de Talento Humano
+#  Sistema de Gestión de Talento Humano
 
 Sistema de escritorio desarrollado en **Java Swing** para la gestión integral del talento humano en entidades públicas. Permite administrar la planta de personal, situaciones administrativas, vacaciones, bienestar, salud ocupacional y evaluaciones de desempeño, con exportación de reportes a Excel y PDF.
 
 ---
 
--Tabla de Contenidos
+##  Tabla de Contenidos
 
 - [Funcionalidades](#-funcionalidades)
 - [Tecnologías](#-tecnologías)
@@ -15,9 +15,10 @@ Sistema de escritorio desarrollado en **Java Swing** para la gestión integral d
 - [Estructura del Proyecto](#-estructura-del-proyecto)
 
 ---
--Funcionalidades
 
-RF-01 — Planta de Personal
+##  Funcionalidades
+
+### RF-01 — Planta de Personal
 Gestión completa del registro de servidores públicos vinculados a la entidad.
 
 - Registrar, editar y dar de baja servidores públicos.
@@ -27,7 +28,7 @@ Gestión completa del registro de servidores públicos vinculados a la entidad.
 
 ---
 
-RF-02 — Situaciones Administrativas
+### RF-02 — Situaciones Administrativas
 Registro y seguimiento del historial de novedades de cada servidor.
 
 - Tipos de situación disponibles: Vacaciones, Permiso 1 día, Permiso 2-3 días, Licencia remunerada, Licencia no remunerada, Maternidad, Paternidad, Enfermedad, Comisión, Traslado y Asignación especial.
@@ -39,7 +40,7 @@ Registro y seguimiento del historial de novedades de cada servidor.
 
 ---
 
-RF-03 — Control de Vacaciones
+### RF-03 — Control de Vacaciones
 Control detallado del saldo vacacional de cada servidor.
 
 - Registro de períodos de vacaciones por año: días acumulados, días usados y días pendientes.
@@ -50,7 +51,7 @@ Control detallado del saldo vacacional de cada servidor.
 
 ---
 
-RF-07 — Dashboard Principal
+### RF-07 — Dashboard Principal
 Panel de control central con métricas en tiempo real y acceso a todas las funcionalidades.
 
 - **Cards de resumen**: total de servidores activos, ausentes hoy, en deuda de vacaciones y en comisión.
@@ -64,7 +65,7 @@ Panel de control central con métricas en tiempo real y acceso a todas las funci
 
 ---
 
-RF-08 — Perfil Integrado del Servidor
+### RF-08 — Perfil Integrado del Servidor
 Vista consolidada de toda la información de un servidor público en una sola ventana con pestañas.
 
 - **Pestaña Datos Personales**: información completa del servidor (cargo, dependencia, tipo de vinculación, antigüedad calculada automáticamente).
@@ -75,7 +76,7 @@ Vista consolidada de toda la información de un servidor público en una sola ve
 
 ---
 
--Exportación de Reportes
+### Exportación de Reportes
 Generación de reportes listos para imprimir o archivar.
 
 - Exportar a **Excel (.xlsx)** con formato de cabeceras resaltadas (Apache POI).
@@ -84,14 +85,14 @@ Generación de reportes listos para imprimir o archivar.
 
 ---
 
- Autenticación y Seguridad
+### Autenticación y Seguridad
 - Pantalla de inicio de sesión con validación de credenciales contra la base de datos.
 - Contraseñas almacenadas con hash **SHA-256** (nunca en texto plano).
 - Creación automática de usuarios por defecto al iniciar por primera vez.
 
 ---
 
--Tecnologías
+##  Tecnologías
 
 | Componente | Tecnología |
 |---|---|
@@ -106,7 +107,7 @@ Generación de reportes listos para imprimir o archivar.
 
 ---
 
--Requisitos Previos
+##  Requisitos Previos
 
 - Java 17 o superior
 - PostgreSQL instalado y en ejecución
@@ -114,7 +115,7 @@ Generación de reportes listos para imprimir o archivar.
 
 ---
 
--Instalación y Configuración
+##  Instalación y Configuración
 
 **1. Clonar el repositorio**
 ```bash
@@ -141,9 +142,9 @@ CREATE DATABASE talento_humano;
 
 Hibernate creará automáticamente todas las tablas al iniciar (`hbm2ddl.auto=update`). Los usuarios por defecto también se crean solos si la base de datos está vacía.
 
+---
 
-
--Credenciales por Defecto
+##  Credenciales por Defecto
 
 | Usuario | Contraseña | Rol |
 |---|---|---|
@@ -151,7 +152,11 @@ Hibernate creará automáticamente todas las tablas al iniciar (`hbm2ddl.auto=up
 | `gestor` | `gestor123` | Gestor |
 | `consulta` | `consulta123` | Consulta |
 
--Roles y Permisos
+
+
+---
+
+##  Roles y Permisos
 
 | Acción | ADMIN | GESTOR | CONSULTA |
 |---|:---:|:---:|:---:|
@@ -162,3 +167,41 @@ Hibernate creará automáticamente todas las tablas al iniciar (`hbm2ddl.auto=up
 | Exportar reportes | X | X | X |
 | Crear usuarios | X |   |   |
 
+---
+
+##Estructura del Proyecto
+
+```
+src/main/java/
+├── org/example/
+│   └── Main.java                        # Punto de entrada
+├── model/
+│   ├── User.java                        # Usuario del sistema
+│   ├── PublicServer.java                # Servidor público
+│   ├── Dependency.java                  # Dependencia organizacional
+│   ├── Position.java                    # Cargo
+│   ├── AdministrativeSituation.java     # Situación administrativa
+│   ├── VacationPeriod.java              # Período vacacional
+│   ├── WelfareRecord.java               # Registro de bienestar
+│   ├── OccupationalHealth.java          # Salud ocupacional
+│   └── PerformanceEvaluation.java       # Evaluación de desempeño
+├── dao/
+│   ├── GenericDao.java                  # DAO base genérico
+│   ├── PublicServerDAO.java             # Operaciones de servidor público
+│   ├── AdministrativeSituationDAO.java  # Operaciones de situaciones
+│   └── VacationPeriodDAO.java           # Operaciones de vacaciones
+├── service/
+│   ├── AuthService.java                 # Autenticación y roles
+│   ├── ExportService.java               # Exportación Excel / PDF
+│   └── OverlappingSituationException.java
+├── view/
+│   ├── LoginWindow.java                 # Pantalla de inicio de sesión
+│   ├── DashboardWindow.java             # Dashboard principal (RF-07)
+│   ├── PublicServerWindow.java          # Planta de personal (RF-01)
+│   ├── AdministrativeSituationWindow.java # Situaciones (RF-02)
+│   ├── VacationWindow.java              # Vacaciones (RF-03)
+│   ├── ServerProfileWindow.java         # Perfil integrado (RF-08)
+│   └── MainWindow.java
+└── util/
+    └── JPAUtil.java                     # Fábrica de EntityManager
+```
