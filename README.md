@@ -6,13 +6,13 @@ Sistema de escritorio desarrollado en **Java Swing** para la gestión integral d
 
 ##  Tabla de Contenidos
 
-- [Funcionalidades](#-funcionalidades)
-- [Tecnologías](#-tecnologías)
-- [Requisitos Previos](#-requisitos-previos)
-- [Instalación y Configuración](#-instalación-y-configuración)
-- [Credenciales por Defecto](#-credenciales-por-defecto)
-- [Roles y Permisos](#-roles-y-permisos)
-- [Estructura del Proyecto](#-estructura-del-proyecto)
+- Funcionalidades
+- Tecnologías
+- Requisitos Previos
+- Instalación y Configuración
+- Credenciales por Defecto
+- Roles y Permisos
+- Estructura del Proyecto
 
 ---
 
