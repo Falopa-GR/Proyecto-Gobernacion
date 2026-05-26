@@ -4,7 +4,7 @@
 
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <!-- ENTIDADES -->
+        <class>model.User</class>
         <class>model.PublicServer</class>
         <class>model.Position</class>
         <class>model.Dependency</class>
@@ -21,8 +21,7 @@
             <property name="jakarta.persistence.jdbc.driver"   value="org.postgresql.Driver"/>
 
             <property name="hibernate.hbm2ddl.auto"  value="update"/>
-            <property name="hibernate.show_sql"       value="true"/>
-            <property name="hibernate.format_sql"     value="true"/>
+            <property name="hibernate.show_sql"       value="false"/>
         </properties>
 
     </persistence-unit>

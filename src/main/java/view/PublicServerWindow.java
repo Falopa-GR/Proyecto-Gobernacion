@@ -85,6 +85,26 @@ public class PublicServerWindow extends JFrame {
                 cargarFormularioDesdeTabla();
             }
         });
+        tableServers.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2 && javax.swing.SwingUtilities.isLeftMouseButton(e)) {
+                    int row = tableServers.rowAtPoint(e.getPoint());
+                    if (row >= 0) {
+                        tableServers.setRowSelectionInterval(row, row);
+                        String idNumber = (String) tableModel.getValueAt(row, 0);
+                        model.PublicServer server = serverDAO.findByIdNumber(idNumber);
+                        if (server != null) {
+                            new ServerProfileWindow(server).setVisible(true);
+                        } else {
+                            JOptionPane.showMessageDialog(null,
+                                    "No se encontro el servidor con cedula: " + idNumber,
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+            }
+        });
 
         JScrollPane scrollPane = new JScrollPane(tableServers);
         panelCenter.add(scrollPane, BorderLayout.CENTER);
