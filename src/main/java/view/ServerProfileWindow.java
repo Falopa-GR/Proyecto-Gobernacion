@@ -18,6 +18,9 @@ import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * ServerProfileWindow — estandarizado con UITheme (paleta verde #318c45)
+ */
 public class ServerProfileWindow extends JFrame {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -28,63 +31,63 @@ public class ServerProfileWindow extends JFrame {
 
     private final PublicServer server;
 
-    // ── Constructor por cédula ───────────────────────────────────────────
     public ServerProfileWindow(String idNumber) {
         this(new PublicServerDAO().findByIdNumber(idNumber));
     }
 
-    // ── Constructor por objeto ───────────────────────────────────────────
     public ServerProfileWindow(PublicServer server) {
         this.server = server;
+        UITheme.applyGlobal();
 
         setTitle("Perfil del Servidor — " +
                 (server != null ? server.getFirstName() + " " + server.getLastName() : "No encontrado"));
-        setSize(860, 640);
+        setSize(880, 660);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setMinimumSize(new Dimension(700, 500));
+        setMinimumSize(new Dimension(700, 520));
 
         if (server == null) {
             JLabel msg = new JLabel("Servidor no encontrado.", SwingConstants.CENTER);
-            msg.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+            msg.setFont(UITheme.FONT_H2);
+            msg.setForeground(UITheme.TEXT_SUB);
             add(msg);
             return;
         }
 
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(new Color(245, 247, 250));
+        root.setBackground(UITheme.BG_SOFT);
         setContentPane(root);
         root.add(buildHeader(), BorderLayout.NORTH);
         root.add(buildTabs(),   BorderLayout.CENTER);
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // HEADER
+    // HEADER — gradiente verde institucional
     // ─────────────────────────────────────────────────────────────────────
     private JPanel buildHeader() {
         JPanel header = new JPanel(new BorderLayout(16, 0)) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setPaint(new GradientPaint(0,0,new Color(17,24,39), getWidth(),0,new Color(30,58,100)));
+                g2.setPaint(new GradientPaint(0, 0, UITheme.SIDEBAR_BG, getWidth(), 0, UITheme.PRIMARY_DARK));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
             }
         };
         header.setBorder(new EmptyBorder(20, 24, 20, 24));
 
-        // Avatar con iniciales
+        // ── Avatar con iniciales ──
         JPanel avatar = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(99, 102, 241));
+                g2.setColor(UITheme.PRIMARY);
                 g2.fillOval(0, 0, 74, 74);
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 26));
                 String ini = initials();
                 FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(ini, (74 - fm.stringWidth(ini)) / 2, 74/2 + fm.getAscent()/2 - 2);
+                g2.drawString(ini, (74 - fm.stringWidth(ini)) / 2, 74 / 2 + fm.getAscent() / 2 - 2);
                 g2.dispose();
             }
             @Override public Dimension getPreferredSize() { return new Dimension(74, 74); }
@@ -92,13 +95,13 @@ public class ServerProfileWindow extends JFrame {
         avatar.setOpaque(false);
         header.add(avatar, BorderLayout.WEST);
 
-        // Info
+        // ── Info ──
         JPanel info = new JPanel();
         info.setOpaque(false);
         info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
 
         JLabel lblName = new JLabel(server.getFirstName() + " " + server.getLastName());
-        lblName.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblName.setFont(UITheme.FONT_H1);
         lblName.setForeground(Color.WHITE);
         info.add(lblName);
 
@@ -106,16 +109,16 @@ public class ServerProfileWindow extends JFrame {
                 "C.C. " + server.getIdNumber()
                         + "   |   " + nvl(server.getVinculationType())
                         + "   |   " + (server.getDependency() != null ? server.getDependency().getName() : "—"));
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblSub.setForeground(new Color(148, 163, 184));
+        lblSub.setFont(UITheme.FONT_BODY);
+        lblSub.setForeground(new Color(0xbb, 0xe5, 0xc4));
         info.add(lblSub);
         info.add(Box.createVerticalStrut(8));
 
-        // Badge situación actual — en SwingWorker para no bloquear
-        JLabel badge = new JLabel("  Cargando situación...  ");
-        badge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        // Badge situación — cargado en background
+        JLabel badge = new JLabel("  Cargando...  ");
+        badge.setFont(UITheme.FONT_BADGE);
         badge.setOpaque(true);
-        badge.setBackground(new Color(71, 85, 105));
+        badge.setBackground(UITheme.SIDEBAR_HOVER);
         badge.setForeground(Color.WHITE);
         badge.setBorder(new EmptyBorder(4, 10, 4, 10));
         info.add(badge);
@@ -130,25 +133,21 @@ public class ServerProfileWindow extends JFrame {
                     AdministrativeSituation actual = get();
                     if (actual == null) {
                         badge.setText("    En actividad normal  ");
-                        badge.setBackground(new Color(16, 185, 129));
+                        badge.setBackground(UITheme.PRIMARY);
+                        badge.setForeground(Color.WHITE);
                     } else {
                         badge.setText("  ⚠  " + labelSituation(actual.getType())
                                 + " hasta " + actual.getEndDate().format(FMT) + "  ");
-                        badge.setBackground(new Color(245, 158, 11));
+                        badge.setBackground(UITheme.WARNING);
+                        badge.setForeground(Color.WHITE);
                     }
                 } catch (Exception ex) { badge.setText("  —  "); }
             }
         }.execute();
 
-        // Botón editar
+        // ── Botón editar ──
         if (AuthService.canEdit()) {
-            JButton btnEdit = new JButton("  Editar");
-            btnEdit.setForeground(Color.WHITE);
-            btnEdit.setBackground(new Color(99, 102, 241));
-            btnEdit.setOpaque(true);
-            btnEdit.setBorderPainted(false);
-            btnEdit.setFocusPainted(false);
-            btnEdit.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            JButton btnEdit = UITheme.primaryButton("  ✎ Editar");
             btnEdit.addActionListener(e -> {
                 PublicServerWindow w = new PublicServerWindow();
                 try { w.loadServer(server.getIdNumber()); } catch (Exception ignored) {}
@@ -168,25 +167,26 @@ public class ServerProfileWindow extends JFrame {
     // ─────────────────────────────────────────────────────────────────────
     private JTabbedPane buildTabs() {
         JTabbedPane tabs = new JTabbedPane(JTabbedPane.TOP);
-        tabs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabs.add("  Datos personales", buildTabPersonal());
-        tabs.add("  Datos laborales",  buildTabLaboral());
-        tabs.add("  Situaciones",      buildTabSituaciones());
-        tabs.add("  Vacaciones",       buildTabVacaciones());
+        tabs.setFont(UITheme.FONT_BODY);
+        tabs.setBackground(UITheme.BG);
+        tabs.add("  Datos personales",  buildTabPersonal());
+        tabs.add("  Datos laborales",   buildTabLaboral());
+        tabs.add("  Situaciones",       buildTabSituaciones());
+        tabs.add("  Vacaciones",        buildTabVacaciones());
         return tabs;
     }
 
     // ── Pestaña 1: Datos personales ──────────────────────────────────────
     private JPanel buildTabPersonal() {
-        // gbRow LOCAL para esta pestaña — no compartido con otras
         int[] row = {0};
         JPanel p = new JPanel(new GridBagLayout());
-        p.setOpaque(false);
-        p.setBorder(new EmptyBorder(14, 18, 14, 18));
+        p.setBackground(UITheme.BG);
+        p.setBorder(new EmptyBorder(UITheme.PAD, 20, UITheme.PAD, 20));
 
         addSection(p, row, "Información personal");
         addRow(p, row, "Cédula",              server.getIdNumber());
         addRow(p, row, "Nombre completo",     server.getFirstName() + " " + server.getLastName());
+
         String edad = "—";
         if (server.getBirthDate() != null) {
             int a = Period.between(server.getBirthDate(), LocalDate.now()).getYears();
@@ -201,7 +201,6 @@ public class ServerProfileWindow extends JFrame {
         addRow(p, row, "Teléfono", nvl(server.getPhone()));
         addRow(p, row, "Correo",   nvl(server.getEmail()));
 
-        // Relleno para empujar todo hacia arriba
         GridBagConstraints fill = new GridBagConstraints();
         fill.gridx = 0; fill.gridy = row[0]; fill.gridwidth = 2;
         fill.weighty = 1; fill.fill = GridBagConstraints.VERTICAL;
@@ -214,8 +213,8 @@ public class ServerProfileWindow extends JFrame {
     private JPanel buildTabLaboral() {
         int[] row = {0};
         JPanel p = new JPanel(new GridBagLayout());
-        p.setOpaque(false);
-        p.setBorder(new EmptyBorder(14, 18, 14, 18));
+        p.setBackground(UITheme.BG);
+        p.setBorder(new EmptyBorder(UITheme.PAD, 20, UITheme.PAD, 20));
 
         addSection(p, row, "Vínculo laboral");
         addRow(p, row, "Cargo",        server.getPosition() != null ? server.getPosition().getName() : "—");
@@ -246,15 +245,15 @@ public class ServerProfileWindow extends JFrame {
 
     // ── Pestaña 3: Situaciones ───────────────────────────────────────────
     private JPanel buildTabSituaciones() {
-        JPanel root = new JPanel(new BorderLayout(0, 8));
-        root.setOpaque(false);
-        root.setBorder(new EmptyBorder(14, 14, 14, 14));
+        JPanel root = new JPanel(new BorderLayout(0, UITheme.PAD_SM));
+        root.setBackground(UITheme.BG);
+        root.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD, UITheme.PAD, UITheme.PAD));
 
-        // Banner situación actual
+        // Banner
         JLabel banner = new JLabel("  Cargando...  ");
-        banner.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        banner.setFont(UITheme.FONT_H3);
         banner.setOpaque(true);
-        banner.setBackground(new Color(71, 85, 105));
+        banner.setBackground(UITheme.SIDEBAR_HOVER);
         banner.setForeground(Color.WHITE);
         banner.setBorder(new EmptyBorder(8, 14, 8, 14));
         JPanel bannerWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -267,9 +266,8 @@ public class ServerProfileWindow extends JFrame {
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
-        root.add(new JScrollPane(styledTable(model)), BorderLayout.CENTER);
+        root.add(UITheme.tableScroll(UITheme.styledTable(model)), BorderLayout.CENTER);
 
-        // Carga en background
         new SwingWorker<List<AdministrativeSituation>, Void>() {
             protected List<AdministrativeSituation> doInBackground() {
                 return situationDAO.findByServer(server);
@@ -277,7 +275,6 @@ public class ServerProfileWindow extends JFrame {
             protected void done() {
                 try {
                     List<AdministrativeSituation> lista = get();
-                    // Actualizar banner
                     AdministrativeSituation actual = lista.stream()
                             .filter(a -> {
                                 LocalDate hoy = LocalDate.now();
@@ -287,17 +284,16 @@ public class ServerProfileWindow extends JFrame {
 
                     if (actual == null) {
                         banner.setText("    Situación actual: En actividad normal  ");
-                        banner.setBackground(new Color(209, 250, 229));
-                        banner.setForeground(new Color(6, 78, 59));
+                        banner.setBackground(UITheme.PRIMARY_LIGHT);
+                        banner.setForeground(UITheme.PRIMARY_DARK);
                     } else {
                         banner.setText("   Situación actual: " + labelSituation(actual.getType())
                                 + "  del " + actual.getStartDate().format(FMT)
                                 + "  al "  + actual.getEndDate().format(FMT) + "  ");
-                        banner.setBackground(new Color(254, 243, 199));
-                        banner.setForeground(new Color(92, 48, 9));
+                        banner.setBackground(UITheme.WARNING_LIGHT);
+                        banner.setForeground(new Color(0x92, 0x40, 0x09));
                     }
 
-                    // Llenar tabla
                     for (AdministrativeSituation a : lista) {
                         long dias = (a.getStartDate() != null && a.getEndDate() != null)
                                 ? a.getStartDate().until(a.getEndDate()).getDays() + 1 : 0;
@@ -318,67 +314,72 @@ public class ServerProfileWindow extends JFrame {
 
     // ── Pestaña 4: Vacaciones ────────────────────────────────────────────
     private JPanel buildTabVacaciones() {
-        JPanel root = new JPanel(new BorderLayout(0, 10));
-        root.setOpaque(false);
-        root.setBorder(new EmptyBorder(14, 14, 14, 14));
+        JPanel root = new JPanel(new BorderLayout(0, UITheme.PAD));
+        root.setBackground(UITheme.BG);
+        root.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD, UITheme.PAD, UITheme.PAD));
 
-        // Cards de resumen — se calculan en background
-        JLabel lAccum = cardVal("...", new Color(59, 130, 246));
-        JLabel lUsado = cardVal("...", new Color(16, 185, 129));
-        JLabel lPend  = cardVal("...", new Color(245, 158, 11));
-        JLabel lPer   = cardVal("...", new Color(107, 114, 128));
+        // Cards de resumen
+        JLabel lAccum = new JLabel("...");
+        JLabel lUsado = new JLabel("...");
+        JLabel lPend  = new JLabel("...");
+        JLabel lPer   = new JLabel("...");
 
-        JPanel summary = new JPanel(new GridLayout(1, 4, 12, 0));
+        JPanel summary = new JPanel(new GridLayout(1, 4, UITheme.PAD, 0));
         summary.setOpaque(false);
-        summary.add(vacCard("Días acumulados",    lAccum));
-        summary.add(vacCard("Días disfrutados",   lUsado));
-        summary.add(vacCard("Días pendientes",    lPend));
-        summary.add(vacCard("Períodos pendientes",lPer));
+        summary.add(makeVacCard("Días acumulados",     lAccum, UITheme.PRIMARY));
+        summary.add(makeVacCard("Días disfrutados",    lUsado, UITheme.ACCENT));
+        summary.add(makeVacCard("Días pendientes",     lPend,  UITheme.WARNING));
+        summary.add(makeVacCard("Períodos pendientes", lPer,   UITheme.TEXT_SUB));
         root.add(summary, BorderLayout.NORTH);
 
+        // Alerta
         JLabel alerta = new JLabel(" ");
-        alerta.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        alerta.setFont(UITheme.FONT_H3);
         alerta.setOpaque(true);
         alerta.setBorder(new EmptyBorder(8, 14, 8, 14));
-        root.add(alerta, BorderLayout.CENTER);
 
         // Tabla
         String[] cols = {"Año", "Acumulados", "Usados", "Pendientes", "Última vacación", "Notas"};
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
-        root.add(new JScrollPane(styledTable(model)), BorderLayout.SOUTH);
+        JTable table = UITheme.styledTable(model);
 
-        // Carga en background
+        JPanel center = new JPanel(new BorderLayout(0, UITheme.PAD_SM));
+        center.setOpaque(false);
+        center.add(alerta, BorderLayout.NORTH);
+        center.add(UITheme.tableScroll(table), BorderLayout.CENTER);
+        root.add(center, BorderLayout.CENTER);
+
         new SwingWorker<int[], Void>() {
             List<VacationPeriod> lista;
             protected int[] doInBackground() {
                 lista = vacationDAO.findByServer(server);
-                int acum  = vacationDAO.totalAccumulatedDays(server);
-                int usado = vacationDAO.totalUsedDays(server);
-                int pend  = vacationDAO.totalPendingDays(server);
-                int per   = vacationDAO.pendingPeriods(server);
-                return new int[]{acum, usado, pend, per};
+                return new int[]{
+                        vacationDAO.totalAccumulatedDays(server),
+                        vacationDAO.totalUsedDays(server),
+                        vacationDAO.totalPendingDays(server),
+                        vacationDAO.pendingPeriods(server)
+                };
             }
             protected void done() {
                 try {
                     int[] v = get();
-                    lAccum.setText(String.valueOf(v[0]));
-                    lUsado.setText(String.valueOf(v[1]));
-                    lPend.setText(String.valueOf(v[2]));
-                    lPer.setText(String.valueOf(v[3]));
-                    // Color dinámico según deuda
+                    styleMetricLabel(lAccum, String.valueOf(v[0]), UITheme.PRIMARY);
+                    styleMetricLabel(lUsado, String.valueOf(v[1]), UITheme.ACCENT);
+                    styleMetricLabel(lPend,  String.valueOf(v[2]), v[3] > 1 ? UITheme.ERROR : UITheme.WARNING);
+                    styleMetricLabel(lPer,   String.valueOf(v[3]), v[3] > 1 ? UITheme.ERROR : UITheme.TEXT_SUB);
+
                     if (v[3] > 1) {
-                        lPend.setForeground(new Color(239, 68, 68));
-                        lPer.setForeground(new Color(239, 68, 68));
                         alerta.setText("  Adeuda " + v[3] + " período(s). Debe programar salida.  ");
-                        alerta.setBackground(new Color(254, 226, 226));
-                        alerta.setForeground(new Color(153, 27, 27));
+                        alerta.setBackground(UITheme.ERROR_LIGHT);
+                        alerta.setForeground(new Color(0x99, 0x1b, 0x1b));
                     } else {
                         alerta.setText("    Sin deuda de vacaciones  ");
-                        alerta.setBackground(new Color(209, 250, 229));
-                        alerta.setForeground(new Color(6, 78, 59));
+                        alerta.setBackground(UITheme.SUCCESS_LIGHT);
+                        alerta.setForeground(UITheme.PRIMARY_DARK);
                     }
+
                     for (VacationPeriod vp : lista) {
                         model.addRow(new Object[]{
                                 vp.getYear(), vp.getAccumulatedDays(), vp.getUsedDays(),
@@ -395,52 +396,39 @@ public class ServerProfileWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // HELPERS DE LAYOUT — sin MigLayout
+    // HELPERS DE LAYOUT
     // ─────────────────────────────────────────────────────────────────────
-
-    /**
-     * Título de sección con línea inferior — ocupa las 2 columnas.
-     * USA GridBagConstraints correctamente (no "span 2" de MigLayout).
-     */
     private void addSection(JPanel p, int[] row, String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        l.setForeground(new Color(99, 102, 241));
-        l.setBorder(new MatteBorder(0, 0, 2, 0, new Color(99, 102, 241)));
+        JLabel l = UITheme.sectionLabel(text);
 
         GridBagConstraints gc = new GridBagConstraints();
         gc.gridx = 0; gc.gridy = row[0];
-        gc.gridwidth = 2;                         // ← correcto para GridBagLayout
-        gc.fill   = GridBagConstraints.HORIZONTAL;
+        gc.gridwidth = 2;
+        gc.fill = GridBagConstraints.HORIZONTAL;
         gc.weightx = 1;
         gc.insets = new Insets(row[0] == 0 ? 0 : 14, 0, 6, 0);
         p.add(l, gc);
         row[0]++;
     }
 
-    /** Fila de etiqueta + valor, separadas por una línea tenue */
     private void addRow(JPanel p, int[] row, String label, String value) {
         GridBagConstraints gl = new GridBagConstraints();
         gl.gridx = 0; gl.gridy = row[0];
-        gl.insets = new Insets(4, 0, 4, 24);
+        gl.insets = new Insets(5, 0, 5, 24);
         gl.anchor = GridBagConstraints.WEST;
 
-        JLabel lbl = new JLabel(label + ":");
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(new Color(100, 116, 139));
+        JLabel lbl = UITheme.fieldLabel(label + ":");
         lbl.setPreferredSize(new Dimension(160, 20));
         p.add(lbl, gl);
 
         GridBagConstraints gv = new GridBagConstraints();
         gv.gridx = 1; gv.gridy = row[0];
-        gv.insets = new Insets(4, 0, 4, 0);
+        gv.insets = new Insets(5, 0, 5, 0);
         gv.anchor = GridBagConstraints.WEST;
-        gv.fill   = GridBagConstraints.HORIZONTAL;
+        gv.fill = GridBagConstraints.HORIZONTAL;
         gv.weightx = 1;
 
-        JLabel val = new JLabel(value);
-        val.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        val.setForeground(new Color(17, 24, 39));
+        JLabel val = UITheme.bodyLabel(value);
         p.add(val, gv);
         row[0]++;
 
@@ -448,54 +436,35 @@ public class ServerProfileWindow extends JFrame {
         GridBagConstraints gs = new GridBagConstraints();
         gs.gridx = 0; gs.gridy = row[0];
         gs.gridwidth = 2; gs.fill = GridBagConstraints.HORIZONTAL;
-        JSeparator sep = new JSeparator();
-        sep.setForeground(new Color(229, 231, 235));
-        p.add(sep, gs);
+        p.add(UITheme.separator(), gs);
         row[0]++;
     }
 
     private JPanel scrollWrap(JPanel p) {
         JScrollPane sp = new JScrollPane(p);
         sp.setBorder(null);
-        sp.getViewport().setOpaque(false);
-        sp.setOpaque(false);
+        sp.getViewport().setBackground(UITheme.BG);
+        sp.getVerticalScrollBar().setUI(new UITheme.MinimalScrollBarUI());
         JPanel w = new JPanel(new BorderLayout());
-        w.setOpaque(false);
+        w.setBackground(UITheme.BG);
         w.add(sp);
         return w;
     }
 
-    private JLabel cardVal(String text, Color color) {
-        JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        l.setForeground(color);
-        return l;
-    }
-
-    private JPanel vacCard(String title, JLabel valueLabel) {
-        JPanel card = new JPanel(new BorderLayout(0, 4));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(229, 231, 235)),
-                new EmptyBorder(12, 12, 12, 12)));
-        JLabel lt = new JLabel(title);
-        lt.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lt.setForeground(new Color(107, 114, 128));
+    private JPanel makeVacCard(String title, JLabel valueLabel, Color accent) {
+        UITheme.Card card = new UITheme.Card(UITheme.PAD);
+        card.setLayout(new BorderLayout(0, 6));
+        JLabel lt = UITheme.fieldLabel(title);
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valueLabel.setForeground(accent);
         card.add(valueLabel, BorderLayout.CENTER);
         card.add(lt,         BorderLayout.SOUTH);
         return card;
     }
 
-    private JTable styledTable(DefaultTableModel model) {
-        JTable t = new JTable(model);
-        t.setRowHeight(28);
-        t.setShowGrid(false);
-        t.setFillsViewportHeight(true);
-        t.setSelectionBackground(new Color(226, 232, 240));
-        t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        t.getTableHeader().setBackground(new Color(248, 250, 252));
-        t.getTableHeader().setReorderingAllowed(false);
-        return t;
+    private void styleMetricLabel(JLabel l, String text, Color color) {
+        l.setText(text);
+        l.setForeground(color);
     }
 
     private String initials() {

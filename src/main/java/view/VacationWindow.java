@@ -6,6 +6,7 @@ import model.PublicServer;
 import model.VacationPeriod;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -15,145 +16,142 @@ import java.time.ZoneId;
 import java.util.List;
 
 /**
- * RF-03 — Ventana de Control de Vacaciones
- *
- * Tres zonas:
- *   NORTE  — búsqueda de servidor + panel de resumen (días causados / usados / pendientes)
- *   CENTRO — tabla historial (izquierda) | formulario nuevo registro (derecha)
- *   SUR    — tabla de alertas: servidores que adeudan > 1 período
+ * RF-03 — Control de Vacaciones — estandarizado con UITheme
  */
 public class VacationWindow extends JFrame {
 
-    // ── DAOs ──────────────────────────────────────────────────────────────
-    private final VacationPeriodDAO  vacationDAO = new VacationPeriodDAO();
-    private final PublicServerDAO    serverDAO   = new PublicServerDAO();
+    private final VacationPeriodDAO vacationDAO = new VacationPeriodDAO();
+    private final PublicServerDAO   serverDAO   = new PublicServerDAO();
 
-    // ── Tabla historial ───────────────────────────────────────────────────
     private JTable            tableHistory;
     private DefaultTableModel modelHistory;
-
-    // ── Tabla alertas ─────────────────────────────────────────────────────
     private JTable            tableAlerts;
     private DefaultTableModel modelAlerts;
 
-    // ── Formulario ────────────────────────────────────────────────────────
-    private JTextField                        txtServerId;
-    private JSpinner                          spinYear;
-    private JSpinner                          spinAccumulated;
-    private JSpinner                          spinUsed;
-    private com.toedter.calendar.JDateChooser dcLastVacation;
-    private JTextArea                         txtNotes;
+    private JTextField                         txtServerId;
+    private JSpinner                           spinYear;
+    private JSpinner                           spinAccumulated;
+    private JSpinner                           spinUsed;
+    private com.toedter.calendar.JDateChooser  dcLastVacation;
+    private JTextArea                          txtNotes;
 
-    // ── Resumen ───────────────────────────────────────────────────────────
-    private JLabel lblServerName;
-    private JLabel lblAdmission;
-    private JLabel lblYearsService;
-    private JLabel lblTotalAccum;
-    private JLabel lblTotalUsed;
-    private JLabel lblTotalPending;
-    private JLabel lblAlert;
+    private JLabel lblServerName, lblAdmission, lblYearsService;
+    private JLabel lblTotalAccum, lblTotalUsed, lblTotalPending, lblAlert;
 
-    // ── Estado ────────────────────────────────────────────────────────────
     private PublicServer currentServer;
 
     // ─────────────────────────────────────────────────────────────────────
     public VacationWindow() {
+        UITheme.applyGlobal();
         setTitle("RF-03: Control de Vacaciones");
-        setSize(1100, 720);
+        setSize(1100, 740);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(0, 0));
+        getContentPane().setBackground(UITheme.BG_SOFT);
 
         add(buildNorthPanel(),  BorderLayout.NORTH);
         add(buildCenterPanel(), BorderLayout.CENTER);
         add(buildSouthPanel(),  BorderLayout.SOUTH);
 
-        loadAlerts(); // cargar alertas al abrir
+        loadAlerts();
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // NORTE — búsqueda + resumen del servidor
+    // NORTE — header + resumen
     // ─────────────────────────────────────────────────────────────────────
     private JPanel buildNorthPanel() {
-        JPanel outer = new JPanel(new BorderLayout(0, 6));
-        outer.setBackground(new Color(39, 174, 96));
-        outer.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
+        JPanel header = UITheme.windowHeader("RF-03 — Control de Vacaciones",
+                "Historial y alertas de períodos vacacionales");
 
-        // ── Fila de búsqueda ──
+        // Búsqueda
         JPanel busqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         busqueda.setOpaque(false);
 
         JLabel lbl = new JLabel("Cédula:");
+        lbl.setFont(UITheme.FONT_H3);
         lbl.setForeground(Color.WHITE);
-        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
         busqueda.add(lbl);
 
         txtServerId = new JTextField(14);
+        UITheme.applyInputStyle(txtServerId);
+        txtServerId.setBackground(new Color(0x2f, 0x6e, 0x3e));
+        txtServerId.setForeground(Color.WHITE);
+        txtServerId.setCaretColor(Color.WHITE);
+        txtServerId.setPreferredSize(new Dimension(160, UITheme.INPUT_H));
         txtServerId.addActionListener(e -> loadServerById());
         busqueda.add(txtServerId);
 
-        JButton btnLoad = new JButton("Cargar servidor");
+        JButton btnLoad = UITheme.secondaryButton("Buscar servidor");
+        btnLoad.setForeground(Color.WHITE);
         btnLoad.addActionListener(e -> loadServerById());
         busqueda.add(btnLoad);
 
-        outer.add(busqueda, BorderLayout.NORTH);
+        header.add(busqueda, BorderLayout.CENTER);
 
-        // ── Panel de resumen ──
-        JPanel resumen = new JPanel(new GridLayout(2, 4, 20, 2));
+        // Panel de resumen con métricas
+        JPanel resumen = new JPanel(new GridLayout(1, 6, 16, 0));
         resumen.setOpaque(false);
+        resumen.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-        lblServerName   = makeResumenLabel("—");
-        lblAdmission    = makeResumenLabel("—");
-        lblYearsService = makeResumenLabel("—");
-        lblTotalAccum   = makeResumenLabel("—");
-        lblTotalUsed    = makeResumenLabel("—");
-        lblTotalPending = makeResumenLabel("—");
-        lblAlert        = new JLabel(" ");
-        lblAlert.setForeground(new Color(255, 235, 150));
-        lblAlert.setFont(lblAlert.getFont().deriveFont(Font.BOLD, 12f));
+        lblServerName   = makeMetricVal("—", Color.WHITE);
+        lblAdmission    = makeMetricVal("—", new Color(0xbb, 0xe5, 0xc4));
+        lblYearsService = makeMetricVal("—", new Color(0xbb, 0xe5, 0xc4));
+        lblTotalAccum   = makeMetricVal("—", Color.WHITE);
+        lblTotalUsed    = makeMetricVal("—", new Color(0xbb, 0xe5, 0xc4));
+        lblTotalPending = makeMetricVal("—", Color.WHITE);
 
-        resumen.add(makeResumenGroup("Servidor",          lblServerName));
-        resumen.add(makeResumenGroup("Fecha de ingreso",  lblAdmission));
-        resumen.add(makeResumenGroup("Años de servicio",  lblYearsService));
-        resumen.add(makeResumenGroup("Días acumulados",   lblTotalAccum));
-        resumen.add(makeResumenGroup("Días disfrutados",  lblTotalUsed));
-        resumen.add(makeResumenGroup("Días pendientes",   lblTotalPending));
-        resumen.add(lblAlert);
+        resumen.add(makeMetricGroup("Servidor",           lblServerName));
+        resumen.add(makeMetricGroup("Fecha de ingreso",   lblAdmission));
+        resumen.add(makeMetricGroup("Años de servicio",   lblYearsService));
+        resumen.add(makeMetricGroup("Días acumulados",    lblTotalAccum));
+        resumen.add(makeMetricGroup("Días disfrutados",   lblTotalUsed));
+        resumen.add(makeMetricGroup("Días pendientes",    lblTotalPending));
 
-        outer.add(resumen, BorderLayout.CENTER);
-        return outer;
+        // Alerta
+        lblAlert = new JLabel(" ");
+        lblAlert.setForeground(new Color(0xff, 0xeb, 0x96));
+        lblAlert.setFont(UITheme.FONT_SMALL.deriveFont(Font.BOLD));
+
+        JPanel resumenOuter = new JPanel(new BorderLayout(0, 4));
+        resumenOuter.setOpaque(false);
+        resumenOuter.add(resumen,  BorderLayout.CENTER);
+        resumenOuter.add(lblAlert, BorderLayout.SOUTH);
+
+        header.add(busqueda, BorderLayout.CENTER);
+        header.add(resumenOuter, BorderLayout.SOUTH);
+
+        return header;
     }
 
-    private JLabel makeResumenLabel(String text) {
+    private JLabel makeMetricVal(String text, Color color) {
         JLabel l = new JLabel(text);
-        l.setForeground(Color.WHITE);
-        l.setFont(l.getFont().deriveFont(Font.BOLD, 14f));
+        l.setForeground(color);
+        l.setFont(UITheme.FONT_H3);
         return l;
     }
 
-    private JPanel makeResumenGroup(String titulo, JLabel valor) {
+    private JPanel makeMetricGroup(String title, JLabel valor) {
         JPanel p = new JPanel(new BorderLayout(0, 2));
         p.setOpaque(false);
-        JLabel t = new JLabel(titulo);
-        t.setForeground(new Color(200, 255, 200));
-        t.setFont(t.getFont().deriveFont(Font.PLAIN, 11f));
-        p.add(t,     BorderLayout.NORTH);
+        JLabel t = new JLabel(title);
+        t.setForeground(new Color(0xbb, 0xe5, 0xc4));
+        t.setFont(UITheme.FONT_SMALL);
+        p.add(t, BorderLayout.NORTH);
         p.add(valor, BorderLayout.CENTER);
         return p;
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // CENTRO — tabla historial | formulario nuevo período
+    // CENTRO — tabla historial | formulario
     // ─────────────────────────────────────────────────────────────────────
     private JSplitPane buildCenterPanel() {
-
         // ── Tabla historial ──
         modelHistory = new DefaultTableModel(
                 new String[]{"ID", "Año", "Acumulados", "Usados", "Pendientes", "Última vacación", "Notas"}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        tableHistory = new JTable(modelHistory);
-        tableHistory.setRowHeight(26);
+        tableHistory = UITheme.styledTable(modelHistory);
         tableHistory.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tableHistory.getColumnModel().getColumn(0).setMaxWidth(50);
         tableHistory.getColumnModel().getColumn(1).setMaxWidth(60);
@@ -161,161 +159,178 @@ public class VacationWindow extends JFrame {
         tableHistory.getColumnModel().getColumn(3).setMaxWidth(70);
         tableHistory.getColumnModel().getColumn(4).setMaxWidth(90);
 
-        // Colorear filas: rojo si tiene días pendientes, verde si está al día
         tableHistory.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean focus, int row, int col) {
                 Component c = super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 if (!sel) {
-                    Object pending = modelHistory.getValueAt(row, 4);
-                    int dias = pending instanceof Integer i ? i : 0;
+                    Object pend = modelHistory.getValueAt(row, 4);
+                    int dias = pend instanceof Integer i ? i : 0;
                     c.setBackground(dias > VacationPeriodDAO.DIAS_POR_ANIO
-                            ? new Color(255, 220, 220)   // rojo: en deuda
+                            ? UITheme.ERROR_LIGHT
                             : dias > 0
-                              ? new Color(255, 243, 205) // amarillo: tiene pendientes
-                              : new Color(212, 237, 218) // verde: al día
-                    );
+                              ? UITheme.WARNING_LIGHT
+                              : UITheme.SUCCESS_LIGHT);
                 }
                 return c;
             }
         });
 
-        // Al seleccionar fila cargar formulario
         tableHistory.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tableHistory.getSelectedRow() >= 0)
                 fillFormFromRow(tableHistory.getSelectedRow());
         });
 
-        JScrollPane spHistory = new JScrollPane(tableHistory);
-        spHistory.setBorder(BorderFactory.createTitledBorder("Historial de períodos"));
+        JPanel historyPanel = new JPanel(new BorderLayout());
+        historyPanel.setBackground(UITheme.BG_SOFT);
+        historyPanel.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD, UITheme.PAD, UITheme.PAD_SM));
+
+        JLabel histTitle = UITheme.sectionLabel("Historial de períodos");
+        historyPanel.add(histTitle, BorderLayout.NORTH);
+        historyPanel.add(Box.createVerticalStrut(UITheme.PAD_SM), BorderLayout.CENTER); // spacer
+        historyPanel.add(UITheme.tableScroll(tableHistory), BorderLayout.CENTER);
+
+        JPanel histWrapper = new JPanel(new BorderLayout(0, UITheme.PAD_SM));
+        histWrapper.setBackground(UITheme.BG_SOFT);
+        histWrapper.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD, UITheme.PAD, UITheme.PAD_SM));
+        histWrapper.add(UITheme.sectionLabel("Historial de períodos"), BorderLayout.NORTH);
+        histWrapper.add(UITheme.tableScroll(tableHistory), BorderLayout.CENTER);
 
         // ── Formulario ──
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createTitledBorder("Registrar / actualizar período"));
+        JPanel formOuter = new JPanel(new BorderLayout());
+        formOuter.setBackground(UITheme.BG_SOFT);
+        formOuter.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD_SM, UITheme.PAD, UITheme.PAD));
+
+        UITheme.Card formCard = new UITheme.Card(UITheme.PAD);
+        formCard.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 10, 2, 10);
+        gbc.insets = new Insets(0, 0, UITheme.PAD_SM, 0);
         gbc.fill   = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
         int row = 0;
 
-        // Año del período
+        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2; gbc.weightx = 1;
+        formCard.add(UITheme.sectionLabel("Registrar / actualizar período"), gbc);
+        gbc.gridwidth = 1;
+        row++;
+
+        // Año
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        form.add(new JLabel("Año del período:"), gbc);
+        formCard.add(UITheme.fieldLabel("Año del período"), gbc);
         spinYear = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear() - 1, 2000, 2100, 1));
         ((JSpinner.DefaultEditor) spinYear.getEditor()).getTextField().setColumns(6);
         gbc.gridx = 1; gbc.weightx = 1;
-        form.add(spinYear, gbc);
+        formCard.add(spinYear, gbc);
         row++;
 
-        // Días acumulados ese año
+        // Días acumulados
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        JLabel lblAccHelp = new JLabel("Días acumulados:");
-        form.add(lblAccHelp, gbc);
+        formCard.add(UITheme.fieldLabel("Días acumulados"), gbc);
         spinAccumulated = new JSpinner(new SpinnerNumberModel(VacationPeriodDAO.DIAS_POR_ANIO, 0, 365, 1));
         ((JSpinner.DefaultEditor) spinAccumulated.getEditor()).getTextField().setColumns(5);
+        JPanel accumRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        accumRow.setOpaque(false);
+        accumRow.add(spinAccumulated);
+        JLabel noteAccum = new JLabel("  (15 = régimen general)");
+        noteAccum.setForeground(UITheme.TEXT_HINT);
+        noteAccum.setFont(UITheme.FONT_CAPTION);
+        accumRow.add(noteAccum);
         gbc.gridx = 1; gbc.weightx = 1;
-        JPanel accumPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        accumPanel.setOpaque(false);
-        accumPanel.add(spinAccumulated);
-        JLabel lblAccNote = new JLabel("  (15 = régimen general)");
-        lblAccNote.setForeground(Color.GRAY);
-        lblAccNote.setFont(lblAccNote.getFont().deriveFont(Font.ITALIC, 11f));
-        accumPanel.add(lblAccNote);
-        form.add(accumPanel, gbc);
+        formCard.add(accumRow, gbc);
         row++;
 
         // Días usados
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        form.add(new JLabel("Días disfrutados:"), gbc);
+        formCard.add(UITheme.fieldLabel("Días disfrutados"), gbc);
         spinUsed = new JSpinner(new SpinnerNumberModel(0, 0, 365, 1));
         ((JSpinner.DefaultEditor) spinUsed.getEditor()).getTextField().setColumns(5);
         gbc.gridx = 1; gbc.weightx = 1;
-        form.add(spinUsed, gbc);
+        formCard.add(spinUsed, gbc);
         row++;
 
         // Última fecha de vacación
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        form.add(new JLabel("Última vacación:"), gbc);
+        formCard.add(UITheme.fieldLabel("Última vacación"), gbc);
         dcLastVacation = new com.toedter.calendar.JDateChooser();
+        dcLastVacation.setFont(UITheme.FONT_BODY);
+        dcLastVacation.setBackground(UITheme.BG);
+        dcLastVacation.setPreferredSize(new Dimension(dcLastVacation.getPreferredSize().width, UITheme.INPUT_H));
+        dcLastVacation.setBorder(BorderFactory.createLineBorder(UITheme.BORDER, 1, true));
         gbc.gridx = 1; gbc.weightx = 1;
-        form.add(dcLastVacation, gbc);
+        formCard.add(dcLastVacation, gbc);
         row++;
 
         // Notas
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0; gbc.anchor = GridBagConstraints.NORTHWEST;
-        form.add(new JLabel("Notas:"), gbc);
-        txtNotes = new JTextArea(3, 18);
-        txtNotes.setLineWrap(true);
-        txtNotes.setWrapStyleWord(true);
+        formCard.add(UITheme.fieldLabel("Notas"), gbc);
+        txtNotes = UITheme.styledTextArea(3);
         gbc.gridx = 1; gbc.weightx = 1; gbc.weighty = 1; gbc.fill = GridBagConstraints.BOTH;
-        form.add(new JScrollPane(txtNotes), gbc);
+        formCard.add(UITheme.textAreaScroll(txtNotes), gbc);
         row++;
 
         // Botones
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
         gbc.weighty = 0; gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.insets = new Insets(12, 10, 8, 10);
+        gbc.anchor  = GridBagConstraints.EAST;
+        gbc.insets  = new Insets(UITheme.PAD, 0, 0, 0);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-
-        JButton btnLimpiar = new JButton("Limpiar");
-        btnLimpiar.addActionListener(e -> clearForm());
-
-        JButton btnEliminar = new JButton("Eliminar");
-        btnEliminar.setForeground(new Color(180, 30, 30));
+        btnPanel.setOpaque(false);
+        JButton btnLimpiar  = UITheme.ghostButton("Limpiar");
+        JButton btnEliminar = UITheme.dangerButton("Eliminar");
+        JButton btnGuardar  = UITheme.primaryButton("Guardar");
+        btnLimpiar.addActionListener(e  -> clearForm());
         btnEliminar.addActionListener(e -> deleteSelected());
+        btnGuardar.addActionListener(e  -> savePeriod());
+        btnPanel.add(btnLimpiar); btnPanel.add(btnEliminar); btnPanel.add(btnGuardar);
+        formCard.add(btnPanel, gbc);
 
-        JButton btnGuardar = new JButton("Guardar");
-        btnGuardar.setBackground(new Color(39, 174, 96));
-        btnGuardar.setForeground(Color.WHITE);
-        btnGuardar.setOpaque(true);
-        btnGuardar.addActionListener(e -> savePeriod());
+        formOuter.add(formCard, BorderLayout.CENTER);
 
-        btnPanel.add(btnLimpiar);
-        btnPanel.add(btnEliminar);
-        btnPanel.add(btnGuardar);
-        form.add(btnPanel, gbc);
-
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, spHistory, form);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, histWrapper, formOuter);
         split.setDividerLocation(580);
         split.setResizeWeight(0.6);
+        split.setBorder(null);
         return split;
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // SUR — tabla de alertas RF-03
+    // SUR — tabla de alertas
     // ─────────────────────────────────────────────────────────────────────
     private JPanel buildSouthPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(
-                "⚠  Servidores con más de 1 período pendiente (deben programar vacaciones)"));
-        panel.setPreferredSize(new Dimension(0, 160));
+        JPanel panel = new JPanel(new BorderLayout(0, UITheme.PAD_SM));
+        panel.setBackground(UITheme.BG);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, UITheme.BORDER),
+                new EmptyBorder(UITheme.PAD_SM, UITheme.PAD, UITheme.PAD_SM, UITheme.PAD)));
+        panel.setPreferredSize(new Dimension(0, 170));
+
+        JPanel alertHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        alertHeader.setOpaque(false);
+        alertHeader.add(UITheme.sectionLabel("⚠  Alertas — Servidores con más de 1 período pendiente"));
+        panel.add(alertHeader, BorderLayout.NORTH);
 
         modelAlerts = new DefaultTableModel(
-                new String[]{"Cédula", "Nombre", "Fecha ingreso", "Años servicio",
-                        "Días acumulados", "Días usados", "Días pendientes", "Períodos pendientes"}, 0) {
+                new String[]{"Cédula", "Nombre", "Fecha ingreso", "Años",
+                        "Días acum.", "Días usados", "Pendientes", "Períodos"}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        tableAlerts = new JTable(modelAlerts);
-        tableAlerts.setRowHeight(24);
+        tableAlerts = UITheme.styledTable(modelAlerts);
         tableAlerts.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean focus, int row, int col) {
                 Component c = super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 if (!sel) {
-                    Object periods = modelAlerts.getValueAt(row, 7);
-                    int p = periods instanceof Integer i ? i : 0;
-                    c.setBackground(p >= 3 ? new Color(255, 200, 200) : new Color(255, 235, 150));
+                    Object p = modelAlerts.getValueAt(row, 7);
+                    int per = p instanceof Integer i ? i : 0;
+                    c.setBackground(per >= 3 ? UITheme.ERROR_LIGHT : UITheme.WARNING_LIGHT);
                 }
                 return c;
             }
         });
-
-        // Doble clic en una alerta: carga ese servidor en el formulario
         tableAlerts.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -327,66 +342,41 @@ public class VacationWindow extends JFrame {
             }
         });
 
-        panel.add(new JScrollPane(tableAlerts), BorderLayout.CENTER);
+        JLabel hint = UITheme.bodyLabel("  Doble clic en una fila para cargar el historial arriba.");
+        hint.setFont(UITheme.FONT_CAPTION);
+        hint.setForeground(UITheme.TEXT_HINT);
 
-        JLabel hint = new JLabel("  Doble clic en un servidor para cargar su historial arriba.");
-        hint.setFont(hint.getFont().deriveFont(Font.ITALIC, 11f));
-        hint.setForeground(Color.GRAY);
+        panel.add(UITheme.tableScroll(tableAlerts), BorderLayout.CENTER);
         panel.add(hint, BorderLayout.SOUTH);
-
         return panel;
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: cargar servidor por cédula
+    // LÓGICA
     // ─────────────────────────────────────────────────────────────────────
     private void loadServerById() {
         String cedula = txtServerId.getText().trim();
-        if (cedula.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Ingresa una cédula.", "Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
+        if (cedula.isEmpty()) { UITheme.showWarning(this, "Ingresa una cédula."); return; }
         currentServer = serverDAO.findByIdNumber(cedula);
-
         if (currentServer == null) {
-            JOptionPane.showMessageDialog(this,
-                    "No se encontró servidor con cédula: " + cedula,
-                    "No encontrado", JOptionPane.INFORMATION_MESSAGE);
-            clearResumen();
-            return;
+            UITheme.showDialog(this, "No encontrado", "No se encontró servidor con cédula: " + cedula);
+            clearResumen(); return;
         }
-
         setTitle("RF-03: Vacaciones — " + currentServer.getFirstName() + " " + currentServer.getLastName());
-        refreshResumen();
-        refreshHistory();
-        clearForm();
-
-        // Pre-llenar el año sugerido en el spinner con el año anterior al actual
+        refreshResumen(); refreshHistory(); clearForm();
         spinYear.setValue(LocalDate.now().getYear() - 1);
-
-        // Pre-llenar días acumulados basado en antigüedad
-        int diasSugeridos = vacationDAO.calcularDiasAcumuladosTotales(currentServer);
-        if (diasSugeridos > 0) {
-            // Para un año concreto siempre es 15 (o el régimen del servidor)
-            spinAccumulated.setValue(VacationPeriodDAO.DIAS_POR_ANIO);
-        }
+        spinAccumulated.setValue(VacationPeriodDAO.DIAS_POR_ANIO);
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: actualizar panel de resumen
-    // ─────────────────────────────────────────────────────────────────────
     private void refreshResumen() {
         if (currentServer == null) return;
-
-        int acum    = vacationDAO.totalAccumulatedDays(currentServer);
-        int usado   = vacationDAO.totalUsedDays(currentServer);
-        int pend    = vacationDAO.totalPendingDays(currentServer);
-        int periods = vacationDAO.pendingPeriods(currentServer);
+        int acum = vacationDAO.totalAccumulatedDays(currentServer);
+        int usado = vacationDAO.totalUsedDays(currentServer);
+        int pend  = vacationDAO.totalPendingDays(currentServer);
+        int per   = vacationDAO.pendingPeriods(currentServer);
 
         lblServerName.setText(currentServer.getFirstName() + " " + currentServer.getLastName()
                 + "  (" + currentServer.getIdNumber() + ")");
-
         if (currentServer.getAdmissionDate() != null) {
             lblAdmission.setText(currentServer.getAdmissionDate().toString());
             int anios = Period.between(currentServer.getAdmissionDate(), LocalDate.now()).getYears();
@@ -395,185 +385,114 @@ public class VacationWindow extends JFrame {
             lblAdmission.setText("Sin fecha de ingreso");
             lblYearsService.setText("—");
         }
-
         lblTotalAccum.setText(acum + " días");
         lblTotalUsed.setText(usado + " días");
         lblTotalPending.setText(pend + " días");
 
-        // Colorear días pendientes y mostrar alerta si aplica
-        if (periods > 1) {
-            lblTotalPending.setForeground(new Color(255, 180, 100));
-            lblAlert.setText("⚠  ALERTA: " + periods + " período(s) sin disfrutar. Debe programar vacaciones.");
+        if (per > 1) {
+            lblTotalPending.setForeground(new Color(0xff, 0xb4, 0x64));
+            lblAlert.setText("⚠  ALERTA: " + per + " período(s) sin disfrutar. Debe programar vacaciones.");
         } else if (pend > 0) {
-            lblTotalPending.setForeground(new Color(255, 235, 150));
+            lblTotalPending.setForeground(new Color(0xff, 0xeb, 0x96));
             lblAlert.setText("Tiene días pendientes del período actual.");
         } else {
-            lblTotalPending.setForeground(new Color(200, 255, 200));
+            lblTotalPending.setForeground(UITheme.PRIMARY_LIGHT);
             lblAlert.setText("✓  Al día en vacaciones.");
         }
     }
 
     private void clearResumen() {
-        lblServerName.setText("—");
-        lblAdmission.setText("—");
-        lblYearsService.setText("—");
-        lblTotalAccum.setText("—");
-        lblTotalUsed.setText("—");
-        lblTotalPending.setText("—");
+        lblServerName.setText("—"); lblAdmission.setText("—");
+        lblYearsService.setText("—"); lblTotalAccum.setText("—");
+        lblTotalUsed.setText("—"); lblTotalPending.setText("—");
         lblAlert.setText(" ");
         setTitle("RF-03: Control de Vacaciones");
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: refrescar tabla de historial
-    // ─────────────────────────────────────────────────────────────────────
     private void refreshHistory() {
         modelHistory.setRowCount(0);
         if (currentServer == null) return;
-
         for (VacationPeriod vp : vacationDAO.findByServer(currentServer)) {
             modelHistory.addRow(new Object[]{
-                    vp.getId(),
-                    vp.getYear(),
-                    vp.getAccumulatedDays(),
-                    vp.getUsedDays(),
-                    vp.getPendingDays(),                           // calculado en el modelo
-                    vp.getLastVacationDate() != null
-                            ? vp.getLastVacationDate().toString() : "—",
-                    vp.getNotes() != null ? vp.getNotes() : ""
+                    vp.getId(), vp.getYear(), vp.getAccumulatedDays(),
+                    vp.getUsedDays(), vp.getPendingDays(),
+                    vp.getLastVacationDate() != null ? vp.getLastVacationDate().toString() : "—",
+                    nvl(vp.getNotes())
             });
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: refrescar tabla de alertas (todos los servidores)
-    // ─────────────────────────────────────────────────────────────────────
     private void loadAlerts() {
         modelAlerts.setRowCount(0);
         List<PublicServer> activos = serverDAO.findAllActive();
-        List<PublicServer> enDeuda = vacationDAO.findServersInDebt(activos);
-
-        for (PublicServer s : enDeuda) {
-            int acum    = vacationDAO.totalAccumulatedDays(s);
-            int usado   = vacationDAO.totalUsedDays(s);
-            int pend    = vacationDAO.totalPendingDays(s);
-            int periods = vacationDAO.pendingPeriods(s);
-            int anios   = s.getAdmissionDate() != null
+        for (PublicServer s : vacationDAO.findServersInDebt(activos)) {
+            int acum = vacationDAO.totalAccumulatedDays(s);
+            int usado = vacationDAO.totalUsedDays(s);
+            int pend  = vacationDAO.totalPendingDays(s);
+            int per   = vacationDAO.pendingPeriods(s);
+            int anios = s.getAdmissionDate() != null
                     ? Period.between(s.getAdmissionDate(), LocalDate.now()).getYears() : 0;
-
             modelAlerts.addRow(new Object[]{
-                    s.getIdNumber(),
-                    s.getFirstName() + " " + s.getLastName(),
+                    s.getIdNumber(), s.getFirstName() + " " + s.getLastName(),
                     s.getAdmissionDate() != null ? s.getAdmissionDate().toString() : "—",
-                    anios,
-                    acum,
-                    usado,
-                    pend,
-                    periods
+                    anios, acum, usado, pend, per
             });
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: guardar período
-    // ─────────────────────────────────────────────────────────────────────
     private void savePeriod() {
-        if (currentServer == null) {
-            JOptionPane.showMessageDialog(this, "Carga primero un servidor con su cédula.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
+        if (currentServer == null) { UITheme.showWarning(this, "Carga primero un servidor."); return; }
         VacationPeriod vp = new VacationPeriod();
         vp.setServer(currentServer);
         vp.setYear((Integer) spinYear.getValue());
         vp.setAccumulatedDays((Integer) spinAccumulated.getValue());
         vp.setUsedDays((Integer) spinUsed.getValue());
-
-        if (dcLastVacation.getDate() != null) {
-            vp.setLastVacationDate(
-                    dcLastVacation.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-        }
+        if (dcLastVacation.getDate() != null)
+            vp.setLastVacationDate(dcLastVacation.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
         vp.setNotes(txtNotes.getText().trim());
-
         try {
             vacationDAO.saveWithValidation(vp);
-            JOptionPane.showMessageDialog(this, "Período de vacaciones guardado correctamente.",
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            refreshHistory();
-            refreshResumen();
-            loadAlerts();
-            clearForm();
-
+            UITheme.showSuccess(this, "Período guardado correctamente.");
+            refreshHistory(); refreshResumen(); loadAlerts(); clearForm();
         } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(),
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            UITheme.showError(this, ex.getMessage());
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
+            UITheme.showError(this, "Error inesperado: " + ex.getMessage());
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: eliminar período seleccionado
-    // ─────────────────────────────────────────────────────────────────────
     private void deleteSelected() {
         int row = tableHistory.getSelectedRow();
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Selecciona un período de la tabla.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        Long id   = (Long)    modelHistory.getValueAt(row, 0);
+        if (row < 0) { UITheme.showWarning(this, "Selecciona un período de la tabla."); return; }
+        Long id = (Long) modelHistory.getValueAt(row, 0);
         Integer yr = (Integer) modelHistory.getValueAt(row, 1);
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "¿Eliminar el registro de vacaciones del año " + yr + "?\n"
-                        + "Esta acción no se puede deshacer.",
-                "Confirmar eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (UITheme.showConfirm(this, "¿Eliminar el registro de vacaciones del año " + yr + "?\nEsta acción no se puede deshacer.")) {
             try {
                 vacationDAO.delete(id);
-                refreshHistory();
-                refreshResumen();
-                loadAlerts();
-                clearForm();
-                JOptionPane.showMessageDialog(this, "Período eliminado.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                refreshHistory(); refreshResumen(); loadAlerts(); clearForm();
+                UITheme.showSuccess(this, "Período eliminado.");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error al eliminar: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                UITheme.showError(this, "Error al eliminar: " + ex.getMessage());
             }
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: llenar formulario al seleccionar fila
-    // ─────────────────────────────────────────────────────────────────────
     private void fillFormFromRow(int row) {
         Long id = (Long) modelHistory.getValueAt(row, 0);
         if (id == null || currentServer == null) return;
-
         vacationDAO.findByServer(currentServer).stream()
                 .filter(v -> id.equals(v.getId()))
                 .findFirst()
                 .ifPresent(v -> {
-                    if (v.getYear() != null)            spinYear.setValue(v.getYear());
+                    if (v.getYear()            != null) spinYear.setValue(v.getYear());
                     if (v.getAccumulatedDays() != null) spinAccumulated.setValue(v.getAccumulatedDays());
-                    if (v.getUsedDays() != null)        spinUsed.setValue(v.getUsedDays());
-                    if (v.getLastVacationDate() != null)
-                        dcLastVacation.setDate(java.sql.Date.valueOf(v.getLastVacationDate()));
-                    else
-                        dcLastVacation.setDate(null);
-                    txtNotes.setText(v.getNotes() != null ? v.getNotes() : "");
+                    if (v.getUsedDays()        != null) spinUsed.setValue(v.getUsedDays());
+                    dcLastVacation.setDate(v.getLastVacationDate() != null
+                            ? java.sql.Date.valueOf(v.getLastVacationDate()) : null);
+                    txtNotes.setText(nvl(v.getNotes()));
                 });
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // LÓGICA: limpiar formulario
-    // ─────────────────────────────────────────────────────────────────────
     private void clearForm() {
         spinYear.setValue(LocalDate.now().getYear() - 1);
         spinAccumulated.setValue(VacationPeriodDAO.DIAS_POR_ANIO);
@@ -582,4 +501,10 @@ public class VacationWindow extends JFrame {
         txtNotes.setText("");
         tableHistory.clearSelection();
     }
+
+    private void showDialog(Component parent, String title, String msg) {
+        JOptionPane.showMessageDialog(parent, msg, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String nvl(String s) { return s != null ? s : ""; }
 }

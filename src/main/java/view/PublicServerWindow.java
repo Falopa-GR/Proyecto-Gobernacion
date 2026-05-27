@@ -3,92 +3,117 @@ package view;
 import com.toedter.calendar.JDateChooser;
 import dao.PublicServerDAO;
 import model.PublicServer;
-import model.Position;
-import model.Dependency;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+/**
+ * RF-01: Planta de Personal — estandarizado con UITheme
+ */
 public class PublicServerWindow extends JFrame {
 
-    private JTable tableServers;
+    private JTable            tableServers;
     private DefaultTableModel tableModel;
-    private PublicServerDAO serverDAO;
+    private PublicServerDAO   serverDAO;
 
-    // Componentes del formulario
-    private JTextField txtIdNumber;
-    private JTextField txtFirstName;
-    private JTextField txtLastName;
-    private JDateChooser dateChooserBirth;
-    private JComboBox<String> comboGender;
-    private JComboBox<String> comboCivilStatus;
-    private JComboBox<String> comboBloodType;
-    private JTextField txtPhone;
-    private JTextField txtEmail;
-    private JTextField txtDependency;
-    private JTextField txtPosition;
-    private JTextField txtPositionCode;
-    private JTextField txtVinculationType;
-    private JDateChooser dateChooserAdmission;
-    private JTextField txtMonthlySalary;
+    private JTextField              txtIdNumber;
+    private JTextField              txtFirstName;
+    private JTextField              txtLastName;
+    private JDateChooser            dateChooserBirth;
+    private JComboBox<String>       comboGender;
+    private JComboBox<String>       comboCivilStatus;
+    private JComboBox<String>       comboBloodType;
+    private JTextField              txtPhone;
+    private JTextField              txtEmail;
+    private JTextField              txtDependency;
+    private JTextField              txtPosition;
+    private JTextField              txtPositionCode;
+    private JTextField              txtVinculationType;
+    private JDateChooser            dateChooserAdmission;
+    private JTextField              txtMonthlySalary;
 
     public PublicServerWindow() {
         serverDAO = new PublicServerDAO();
+        UITheme.applyGlobal();
 
         setTitle("RF-01: Planta de Personal");
         setSize(1200, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(UITheme.BG_SOFT);
 
-        // Panel superior con botones de acción
-        JPanel panelTop = new JPanel();
-        panelTop.setBackground(new Color(52, 152, 219));
-        JButton btnRefresh = new JButton("Refrescar");
-        btnRefresh.addActionListener(e -> cargarServidores());
-        JButton btnNuevo = new JButton("Nuevo Servidor");
+        add(buildHeader(), BorderLayout.NORTH);
+        add(buildContent(), BorderLayout.CENTER);
+        add(buildFooter(), BorderLayout.SOUTH);
+
+        cargarServidores();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // HEADER
+    // ─────────────────────────────────────────────────────────────────────
+    private JPanel buildHeader() {
+        JPanel header = UITheme.windowHeader("RF-01 — Planta de Personal", "Gestión de servidores públicos activos");
+
+        // Botones de acción en el extremo derecho del header
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        btnPanel.setOpaque(false);
+
+        JButton btnNuevo    = UITheme.secondaryButton("+ Nuevo");
+        JButton btnGuardar  = UITheme.primaryButton("Guardar");
+        JButton btnBaja     = UITheme.dangerButton("Dar de baja");
+        JButton btnRefresh  = UITheme.ghostButton("↺ Actualizar");
+
+        btnNuevo.setForeground(Color.WHITE);
         btnNuevo.addActionListener(e -> limpiarFormulario());
-        JButton btnGuardar = new JButton("Guardar");
         btnGuardar.addActionListener(e -> guardarServidor());
-        JButton btnEliminar = new JButton("Dar de Baja");
-        btnEliminar.addActionListener(e -> darDeBaja());
+        btnBaja.addActionListener(e -> darDeBaja());
+        btnRefresh.setForeground(new Color(0xbb, 0xe5, 0xc4));
+        btnRefresh.addActionListener(e -> cargarServidores());
 
-        panelTop.add(btnRefresh);
-        panelTop.add(btnNuevo);
-        panelTop.add(btnGuardar);
-        panelTop.add(btnEliminar);
-        add(panelTop, BorderLayout.NORTH);
+        btnPanel.add(btnRefresh);
+        btnPanel.add(btnNuevo);
+        btnPanel.add(btnGuardar);
+        btnPanel.add(btnBaja);
+        header.add(btnPanel, BorderLayout.EAST);
 
-        // Panel central: tabla de servidores
-        JPanel panelCenter = new JPanel(new BorderLayout());
+        return header;
+    }
 
-        // Tabla
+    // ─────────────────────────────────────────────────────────────────────
+    // CONTENIDO PRINCIPAL (SplitPane formulario | tabla)
+    // ─────────────────────────────────────────────────────────────────────
+    private JSplitPane buildContent() {
+        // ── Formulario ──
+        JScrollPane scrollForm = new JScrollPane(buildForm());
+        scrollForm.setBorder(null);
+        scrollForm.setPreferredSize(new Dimension(400, 600));
+        scrollForm.getVerticalScrollBar().setUI(new UITheme.MinimalScrollBarUI());
+
+        // ── Tabla ──
+        JPanel tablePanel = new JPanel(new BorderLayout(0, UITheme.PAD_SM));
+        tablePanel.setBackground(UITheme.BG_SOFT);
+        tablePanel.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD, UITheme.PAD, UITheme.PAD));
+
         tableModel = new DefaultTableModel(
-                new String[]{"Cédula", "Nombre", "Apellido", "Dependencia", "Cargo", "Teléfono", "Email", "Estado"},
-                0
-        ) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Tabla de solo lectura
-            }
+                new String[]{"Cédula", "Nombre", "Apellido", "Dependencia", "Cargo", "Teléfono", "Email", "Estado"}, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
         };
-
-        tableServers = new JTable(tableModel);
+        tableServers = UITheme.styledTable(tableModel);
         tableServers.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tableServers.setRowHeight(25);
         tableServers.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tableServers.getSelectedRow() >= 0) {
+            if (!e.getValueIsAdjusting() && tableServers.getSelectedRow() >= 0)
                 cargarFormularioDesdeTabla();
-            }
         });
         tableServers.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2 && javax.swing.SwingUtilities.isLeftMouseButton(e)) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
                     int row = tableServers.rowAtPoint(e.getPoint());
                     if (row >= 0) {
                         tableServers.setRowSelectionInterval(row, row);
@@ -97,300 +122,236 @@ public class PublicServerWindow extends JFrame {
                         if (server != null) {
                             new ServerProfileWindow(server).setVisible(true);
                         } else {
-                            JOptionPane.showMessageDialog(null,
-                                    "No se encontro el servidor con cedula: " + idNumber,
-                                    "Error", JOptionPane.ERROR_MESSAGE);
+                            UITheme.showError(null, "No se encontró el servidor con cédula: " + idNumber);
                         }
                     }
                 }
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(tableServers);
-        panelCenter.add(scrollPane, BorderLayout.CENTER);
+        JLabel hint = UITheme.bodyLabel("  Doble clic en una fila para ver el perfil completo del servidor");
+        hint.setForeground(UITheme.TEXT_SUB);
+        hint.setFont(UITheme.FONT_CAPTION);
 
-        // Formulario (lado izquierdo del panel central en un JSplitPane)
-        JPanel panelFormBase = crearPanelFormulario();
-        JScrollPane scrollForm = new JScrollPane(panelFormBase);
-        scrollForm.setPreferredSize(new Dimension(400, 600));
+        tablePanel.add(UITheme.tableScroll(tableServers), BorderLayout.CENTER);
+        tablePanel.add(hint, BorderLayout.SOUTH);
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scrollForm, panelCenter);
-        splitPane.setDividerLocation(400);
-        add(splitPane, BorderLayout.CENTER);
-
-        // Panel inferior con información
-        JPanel panelBottom = new JPanel();
-        panelBottom.setBackground(Color.LIGHT_GRAY);
-        JLabel labelInfo = new JLabel("Total de servidores activos: 0");
-        panelBottom.add(labelInfo);
-        add(panelBottom, BorderLayout.SOUTH);
-
-        // Cargar datos inicialmente
-        cargarServidores();
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scrollForm, tablePanel);
+        split.setDividerLocation(420);
+        split.setBorder(null);
+        split.setBackground(UITheme.BG_SOFT);
+        return split;
     }
 
-    private JPanel crearPanelFormulario() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createTitledBorder("Datos del Servidor"));
+    // ─────────────────────────────────────────────────────────────────────
+    // FORMULARIO
+    // ─────────────────────────────────────────────────────────────────────
+    private JPanel buildForm() {
+        JPanel outer = new JPanel(new BorderLayout());
+        outer.setBackground(UITheme.BG_SOFT);
+        outer.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD, UITheme.PAD, UITheme.PAD_SM));
 
-        // Fila 1: Cédula
-        panel.add(crearFilaFormulario("Cédula:", txtIdNumber = new JTextField(15)));
+        UITheme.Card card = new UITheme.Card(UITheme.PAD);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
-        // Fila 2: Nombre
-        panel.add(crearFilaFormulario("Nombre:", txtFirstName = new JTextField(15)));
+        card.add(UITheme.sectionLabel("Datos del Servidor"));
+        card.add(Box.createVerticalStrut(UITheme.PAD));
 
-        // Fila 3: Apellido
-        panel.add(crearFilaFormulario("Apellido:", txtLastName = new JTextField(15)));
+        // Campos
+        txtIdNumber        = UITheme.styledInput("");
+        txtFirstName       = UITheme.styledInput("");
+        txtLastName        = UITheme.styledInput("");
+        txtPhone           = UITheme.styledInput("");
+        txtEmail           = UITheme.styledInput("");
+        txtDependency      = UITheme.styledInput("");
+        txtPosition        = UITheme.styledInput("");
+        txtPositionCode    = UITheme.styledInput("");
+        txtVinculationType = UITheme.styledInput("");
+        txtMonthlySalary   = UITheme.styledInput("");
 
-        // Fila 4: Fecha de Nacimiento
-        dateChooserBirth = new JDateChooser();
-        panel.add(crearFilaFormularioConLabel("Fecha Nacimiento:", dateChooserBirth));
+        comboGender      = UITheme.styledCombo(new String[]{"M", "F"});
+        comboCivilStatus = UITheme.styledCombo(new String[]{"Soltero", "Casado", "Divorciado", "Viudo"});
+        comboBloodType   = UITheme.styledCombo(new String[]{"O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"});
 
-        // Fila 5: Género
-        comboGender = new JComboBox<>(new String[]{"M", "F"});
-        panel.add(crearFilaFormulario("Género:", comboGender));
+        dateChooserBirth     = new JDateChooser(); styleDate(dateChooserBirth);
+        dateChooserAdmission = new JDateChooser(); styleDate(dateChooserAdmission);
 
-        // Fila 6: Estado Civil
-        comboCivilStatus = new JComboBox<>(new String[]{"Soltero", "Casado", "Divorciado", "Viudo"});
-        panel.add(crearFilaFormulario("Estado Civil:", comboCivilStatus));
+        addFormField(card, "Cédula *",            txtIdNumber);
+        addFormField(card, "Nombre *",            txtFirstName);
+        addFormField(card, "Apellido",            txtLastName);
+        addFormField(card, "Fecha de nacimiento", dateChooserBirth);
+        addFormField(card, "Género",              comboGender);
+        addFormField(card, "Estado civil",        comboCivilStatus);
+        addFormField(card, "Tipo de sangre",      comboBloodType);
+        addFormField(card, "Teléfono",            txtPhone);
+        addFormField(card, "Email",               txtEmail);
+        addFormField(card, "Dependencia",         txtDependency);
+        addFormField(card, "Cargo",               txtPosition);
+        addFormField(card, "Código cargo",        txtPositionCode);
+        addFormField(card, "Tipo de vinculación", txtVinculationType);
+        addFormField(card, "Fecha de ingreso",    dateChooserAdmission);
+        addFormField(card, "Salario mensual",     txtMonthlySalary);
 
-        // Fila 7: Tipo de Sangre
-        comboBloodType = new JComboBox<>(new String[]{"O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"});
-        panel.add(crearFilaFormulario("Tipo de Sangre:", comboBloodType));
-
-        // Fila 8: Teléfono
-        panel.add(crearFilaFormulario("Teléfono:", txtPhone = new JTextField(15)));
-
-        // Fila 9: Email
-        panel.add(crearFilaFormulario("Email:", txtEmail = new JTextField(15)));
-
-        // Fila 10: Dependencia
-        panel.add(crearFilaFormulario("Dependencia:", txtDependency = new JTextField(15)));
-
-        // Fila 11: Cargo
-        panel.add(crearFilaFormulario("Cargo:", txtPosition = new JTextField(15)));
-
-        // Fila 12: Código Cargo
-        panel.add(crearFilaFormulario("Código Cargo:", txtPositionCode = new JTextField(15)));
-
-        // Fila 13: Tipo de Vinculación
-        panel.add(crearFilaFormulario("Tipo Vinculación:", txtVinculationType = new JTextField(15)));
-
-        // Fila 14: Fecha de Ingreso
-        dateChooserAdmission = new JDateChooser();
-        panel.add(crearFilaFormularioConLabel("Fecha Ingreso:", dateChooserAdmission));
-
-        // Fila 15: Salario Mensual
-        panel.add(crearFilaFormulario("Salario Mensual:", txtMonthlySalary = new JTextField(15)));
-
-        // Retornar el panel envuelto en JScrollPane (crearemos el scroll en el llamante)
-        return panel;
+        outer.add(card, BorderLayout.NORTH);
+        return outer;
     }
 
-    private JPanel crearFilaFormulario(String label, JComponent campo) {
-        JPanel fila = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        fila.add(new JLabel(label));
-        fila.add(campo);
-        return fila;
+    private void addFormField(JPanel parent, String label, JComponent field) {
+        parent.add(UITheme.formField(label, field));
+        parent.add(Box.createVerticalStrut(UITheme.PAD_SM));
     }
 
-    private JPanel crearFilaFormularioConLabel(String label, JComponent campo) {
-        JPanel fila = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        fila.add(new JLabel(label));
-        fila.add(campo);
-        return fila;
+    private void styleDate(JDateChooser dc) {
+        dc.setFont(UITheme.FONT_BODY);
+        dc.setBackground(UITheme.BG);
+        dc.setPreferredSize(new Dimension(dc.getPreferredSize().width, UITheme.INPUT_H));
+        dc.setBorder(BorderFactory.createLineBorder(UITheme.BORDER, 1, true));
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // FOOTER
+    // ─────────────────────────────────────────────────────────────────────
+    private JPanel buildFooter() {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.PAD, 6));
+        p.setBackground(UITheme.BG);
+        p.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UITheme.BORDER));
+        p.add(UITheme.badge("Activo", UITheme.PRIMARY_LIGHT, UITheme.PRIMARY_DARK));
+        p.add(UITheme.bodyLabel("  Total de servidores activos se actualiza al cargar la lista"));
+        return p;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // LÓGICA
+    // ─────────────────────────────────────────────────────────────────────
     private void cargarServidores() {
-        tableModel.setRowCount(0); // Limpiar tabla
-
+        tableModel.setRowCount(0);
         try {
             List<PublicServer> servidores = serverDAO.findAllActive();
-            for (PublicServer servidor : servidores) {
-                String dependencyName = servidor.getDependency() != null ? servidor.getDependency().getName() : "-";
-                String positionName = servidor.getPosition() != null ? servidor.getPosition().getName() : "-";
-
+            for (PublicServer srv : servidores) {
+                String dep = srv.getDependency() != null ? srv.getDependency().getName() : "—";
+                String pos = srv.getPosition()   != null ? srv.getPosition().getName()   : "—";
                 tableModel.addRow(new Object[]{
-                        servidor.getIdNumber(),
-                        servidor.getFirstName(),
-                        servidor.getLastName(),
-                        dependencyName,
-                        positionName,
-                        servidor.getPhone(),
-                        servidor.getEmail(),
-                        servidor.getActive() ? "Activo" : "Inactivo"
+                        srv.getIdNumber(), srv.getFirstName(), srv.getLastName(),
+                        dep, pos, srv.getPhone(), srv.getEmail(),
+                        Boolean.TRUE.equals(srv.getActive()) ? "Activo" : "Inactivo"
                 });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar servidores: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
+            UITheme.showError(this, "Error al cargar servidores: " + e.getMessage());
         }
     }
 
     private void cargarFormularioDesdeTabla() {
         int row = tableServers.getSelectedRow();
-        if (row >= 0) {
-            String idNumber = (String) tableModel.getValueAt(row, 0);
-            try {
-                PublicServer servidor = serverDAO.findByIdNumber(idNumber);
-                if (servidor != null) {
-                    txtIdNumber.setText(servidor.getIdNumber());
-                    txtFirstName.setText(servidor.getFirstName());
-                    txtLastName.setText(servidor.getLastName());
-                    if (servidor.getBirthDate() != null) {
-                        dateChooserBirth.setDate(java.sql.Date.valueOf(servidor.getBirthDate()));
-                    }
-                    if (servidor.getGender() != null) comboGender.setSelectedItem(servidor.getGender());
-                    if (servidor.getCivilStatus() != null) comboCivilStatus.setSelectedItem(servidor.getCivilStatus());
-                    if (servidor.getBloodType() != null) comboBloodType.setSelectedItem(servidor.getBloodType());
-                    txtPhone.setText(servidor.getPhone() != null ? servidor.getPhone() : "");
-                    txtEmail.setText(servidor.getEmail() != null ? servidor.getEmail() : "");
-                    txtDependency.setText(servidor.getDependency() != null ? servidor.getDependency().getName() : "");
-                    txtPosition.setText(servidor.getPosition() != null ? servidor.getPosition().getName() : "");
-                    txtPositionCode.setText(servidor.getPositionCode() != null ? servidor.getPositionCode() : "");
-                    txtVinculationType.setText(servidor.getVinculationType() != null ? servidor.getVinculationType() : "");
-                    if (servidor.getAdmissionDate() != null) {
-                        dateChooserAdmission.setDate(java.sql.Date.valueOf(servidor.getAdmissionDate()));
-                    }
-                    txtMonthlySalary.setText(servidor.getMonthlySalary() != null ? servidor.getMonthlySalary().toString() : "");
-                    txtIdNumber.setEditable(false); // No permitir editar cédula
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error al cargar servidor: " + e.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        if (row < 0) return;
+        String id = (String) tableModel.getValueAt(row, 0);
+        try {
+            PublicServer srv = serverDAO.findByIdNumber(id);
+            if (srv != null) fillForm(srv);
+        } catch (Exception e) {
+            UITheme.showError(this, "Error al cargar servidor: " + e.getMessage());
         }
     }
 
-    /**
-     * Carga un servidor en el formulario por su número de cédula.
-     * Útil para abrir la ventana desde la búsqueda.
-     */
     public void loadServer(String idNumber) {
         if (idNumber == null || idNumber.trim().isEmpty()) return;
         try {
-            PublicServer servidor = serverDAO.findByIdNumber(idNumber);
-            if (servidor != null) {
-                txtIdNumber.setText(servidor.getIdNumber());
-                txtIdNumber.setEditable(false);
-                txtFirstName.setText(servidor.getFirstName() != null ? servidor.getFirstName() : "");
-                txtLastName.setText(servidor.getLastName() != null ? servidor.getLastName() : "");
-                if (servidor.getBirthDate() != null) dateChooserBirth.setDate(java.sql.Date.valueOf(servidor.getBirthDate()));
-                if (servidor.getGender() != null) comboGender.setSelectedItem(servidor.getGender());
-                if (servidor.getCivilStatus() != null) comboCivilStatus.setSelectedItem(servidor.getCivilStatus());
-                if (servidor.getBloodType() != null) comboBloodType.setSelectedItem(servidor.getBloodType());
-                txtPhone.setText(servidor.getPhone() != null ? servidor.getPhone() : "");
-                txtEmail.setText(servidor.getEmail() != null ? servidor.getEmail() : "");
-                txtDependency.setText(servidor.getDependency() != null ? servidor.getDependency().getName() : "");
-                txtPosition.setText(servidor.getPosition() != null ? servidor.getPosition().getName() : "");
-                txtPositionCode.setText(servidor.getPositionCode() != null ? servidor.getPositionCode() : "");
-                txtVinculationType.setText(servidor.getVinculationType() != null ? servidor.getVinculationType() : "");
-                if (servidor.getAdmissionDate() != null) dateChooserAdmission.setDate(java.sql.Date.valueOf(servidor.getAdmissionDate()));
-                txtMonthlySalary.setText(servidor.getMonthlySalary() != null ? servidor.getMonthlySalary().toString() : "");
-            } else {
-                JOptionPane.showMessageDialog(this, "Servidor no encontrado: " + idNumber, "Información", JOptionPane.INFORMATION_MESSAGE);
-            }
+            PublicServer srv = serverDAO.findByIdNumber(idNumber);
+            if (srv != null) fillForm(srv);
+            else UITheme.showDialog(this, "Información", "Servidor no encontrado: " + idNumber);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar servidor: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
+            UITheme.showError(this, "Error al cargar servidor: " + e.getMessage());
         }
     }
 
+    private void fillForm(PublicServer srv) {
+        txtIdNumber.setText(srv.getIdNumber());
+        txtIdNumber.setEditable(false);
+        txtFirstName.setText(nvl(srv.getFirstName()));
+        txtLastName.setText(nvl(srv.getLastName()));
+        if (srv.getBirthDate()    != null) dateChooserBirth.setDate(java.sql.Date.valueOf(srv.getBirthDate()));
+        if (srv.getGender()       != null) comboGender.setSelectedItem(srv.getGender());
+        if (srv.getCivilStatus()  != null) comboCivilStatus.setSelectedItem(srv.getCivilStatus());
+        if (srv.getBloodType()    != null) comboBloodType.setSelectedItem(srv.getBloodType());
+        txtPhone.setText(nvl(srv.getPhone()));
+        txtEmail.setText(nvl(srv.getEmail()));
+        txtDependency.setText(srv.getDependency() != null ? srv.getDependency().getName() : "");
+        txtPosition.setText(srv.getPosition()     != null ? srv.getPosition().getName()   : "");
+        txtPositionCode.setText(nvl(srv.getPositionCode()));
+        txtVinculationType.setText(nvl(srv.getVinculationType()));
+        if (srv.getAdmissionDate() != null) dateChooserAdmission.setDate(java.sql.Date.valueOf(srv.getAdmissionDate()));
+        txtMonthlySalary.setText(srv.getMonthlySalary() != null ? srv.getMonthlySalary().toString() : "");
+    }
+
     private void limpiarFormulario() {
-        txtIdNumber.setText("");
-        txtIdNumber.setEditable(true);
-        txtFirstName.setText("");
-        txtLastName.setText("");
+        txtIdNumber.setText(""); txtIdNumber.setEditable(true);
+        txtFirstName.setText(""); txtLastName.setText("");
         dateChooserBirth.setDate(null);
-        comboGender.setSelectedIndex(0);
-        comboCivilStatus.setSelectedIndex(0);
-        comboBloodType.setSelectedIndex(0);
-        txtPhone.setText("");
-        txtEmail.setText("");
-        txtDependency.setText("");
-        txtPosition.setText("");
-        txtPositionCode.setText("");
-        txtVinculationType.setText("");
-        dateChooserAdmission.setDate(null);
-        txtMonthlySalary.setText("");
+        comboGender.setSelectedIndex(0); comboCivilStatus.setSelectedIndex(0); comboBloodType.setSelectedIndex(0);
+        txtPhone.setText(""); txtEmail.setText("");
+        txtDependency.setText(""); txtPosition.setText("");
+        txtPositionCode.setText(""); txtVinculationType.setText("");
+        dateChooserAdmission.setDate(null); txtMonthlySalary.setText("");
         tableServers.clearSelection();
     }
 
     private void guardarServidor() {
         try {
-            // Validaciones básicas
             if (txtIdNumber.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "La cédula es obligatoria", "Validación", JOptionPane.WARNING_MESSAGE);
-                return;
+                UITheme.showWarning(this, "La cédula es obligatoria."); return;
             }
             if (txtFirstName.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "El nombre es obligatorio", "Validación", JOptionPane.WARNING_MESSAGE);
-                return;
+                UITheme.showWarning(this, "El nombre es obligatorio."); return;
             }
-
-            PublicServer servidor = new PublicServer();
-            servidor.setIdNumber(txtIdNumber.getText().trim());
-            servidor.setFirstName(txtFirstName.getText().trim());
-            servidor.setLastName(txtLastName.getText().trim());
-            servidor.setGender((String) comboGender.getSelectedItem());
-            servidor.setCivilStatus((String) comboCivilStatus.getSelectedItem());
-            servidor.setBloodType((String) comboBloodType.getSelectedItem());
-            servidor.setPhone(txtPhone.getText().trim());
-            servidor.setEmail(txtEmail.getText().trim());
-            servidor.setPositionCode(txtPositionCode.getText().trim());
-            servidor.setVinculationType(txtVinculationType.getText().trim());
-            servidor.setActive(true);
-
-            if (dateChooserBirth.getDate() != null) {
-                servidor.setBirthDate(dateChooserBirth.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-            }
-            if (dateChooserAdmission.getDate() != null) {
-                servidor.setAdmissionDate(dateChooserAdmission.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-            }
+            PublicServer srv = new PublicServer();
+            srv.setIdNumber(txtIdNumber.getText().trim());
+            srv.setFirstName(txtFirstName.getText().trim());
+            srv.setLastName(txtLastName.getText().trim());
+            srv.setGender((String) comboGender.getSelectedItem());
+            srv.setCivilStatus((String) comboCivilStatus.getSelectedItem());
+            srv.setBloodType((String) comboBloodType.getSelectedItem());
+            srv.setPhone(txtPhone.getText().trim());
+            srv.setEmail(txtEmail.getText().trim());
+            srv.setPositionCode(txtPositionCode.getText().trim());
+            srv.setVinculationType(txtVinculationType.getText().trim());
+            srv.setActive(true);
+            if (dateChooserBirth.getDate()     != null)
+                srv.setBirthDate(dateChooserBirth.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+            if (dateChooserAdmission.getDate() != null)
+                srv.setAdmissionDate(dateChooserAdmission.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
             if (!txtMonthlySalary.getText().isEmpty()) {
-                try {
-                    servidor.setMonthlySalary(Double.parseDouble(txtMonthlySalary.getText().trim()));
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Salario debe ser un número válido", "Validación", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
+                try { srv.setMonthlySalary(Double.parseDouble(txtMonthlySalary.getText().trim())); }
+                catch (NumberFormatException ex) { UITheme.showWarning(this, "El salario debe ser un número válido."); return; }
             }
-
-            serverDAO.save(servidor);
-            JOptionPane.showMessageDialog(this, "Servidor guardado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            serverDAO.save(srv);
+            UITheme.showSuccess(this, "Servidor guardado correctamente.");
             limpiarFormulario();
             cargarServidores();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al guardar: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
+            UITheme.showError(this, "Error al guardar: " + e.getMessage());
         }
     }
 
     private void darDeBaja() {
         int row = tableServers.getSelectedRow();
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Selecciona un servidor", "Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        String idNumber = (String) tableModel.getValueAt(row, 0);
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "¿Dar de baja al servidor con cédula " + idNumber + "?",
-                "Confirmar",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (row < 0) { UITheme.showWarning(this, "Selecciona un servidor de la tabla."); return; }
+        String id = (String) tableModel.getValueAt(row, 0);
+        if (UITheme.showConfirm(this, "¿Dar de baja al servidor con cédula " + id + "?")) {
             try {
-                serverDAO.deactivate(idNumber);
-                JOptionPane.showMessageDialog(this, "Servidor dado de baja", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                serverDAO.deactivate(id);
+                UITheme.showSuccess(this, "Servidor dado de baja correctamente.");
                 limpiarFormulario();
                 cargarServidores();
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error al dar de baja: " + e.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                UITheme.showError(this, "Error al dar de baja: " + e.getMessage());
             }
         }
     }
+
+    // ── Util: dialog genérico de info ─────────────────────────────────────
+    private void showDialog(Component parent, String title, String msg) {
+        JOptionPane.showMessageDialog(parent, msg, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String nvl(String s) { return s != null ? s : ""; }
 }

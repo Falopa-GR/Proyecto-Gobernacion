@@ -10,11 +10,7 @@ import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 
 /**
- * Pantalla de inicio de sesión.
- *
- * Fix centrado: los campos estaban dentro de BoxLayout Y_AXIS con LEFT_ALIGNMENT,
- * lo que los empujaba a la izquierda. Solución: panel contenedor de ancho fijo
- * centrado con GridBagLayout (que centra su contenido por defecto).
+ * LoginWindow — estandarizado con UITheme (paleta verde #318c45)
  */
 public class LoginWindow extends JFrame {
 
@@ -29,16 +25,17 @@ public class LoginWindow extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setUndecorated(true);
-        setShape(new RoundRectangle2D.Double(0, 0, 440, 520, 24, 24));
+        setShape(new RoundRectangle2D.Double(0, 0, 440, 520, 20, 20));
         setResizable(false);
 
-        // ── Fondo degradado ──────────────────────────────────────────────
+        // ── Fondo con paleta verde institucional ─────────────────────────
         JPanel root = new JPanel(new BorderLayout()) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setPaint(new GradientPaint(0, 0, new Color(17,24,39), 0, getHeight(), new Color(30,41,59)));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24);
+                g2.setPaint(new GradientPaint(0, 0, UITheme.SIDEBAR_BG, 0, getHeight(),
+                        new Color(0x1e, 0x35, 0x22)));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
             }
         };
         root.setOpaque(false);
@@ -59,39 +56,38 @@ public class LoginWindow extends JFrame {
         // ── Botón cerrar ─────────────────────────────────────────────────
         JButton btnClose = new JButton("✕");
         btnClose.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btnClose.setForeground(new Color(148,163,184));
-        btnClose.setContentAreaFilled(false); btnClose.setBorderPainted(false); btnClose.setFocusPainted(false);
+        btnClose.setForeground(new Color(0xbb, 0xe5, 0xc4));
+        btnClose.setContentAreaFilled(false);
+        btnClose.setBorderPainted(false);
+        btnClose.setFocusPainted(false);
         btnClose.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnClose.addActionListener(e -> System.exit(0));
         btnClose.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) { btnClose.setForeground(Color.WHITE); }
-            public void mouseExited(MouseEvent e)  { btnClose.setForeground(new Color(148,163,184)); }
+            public void mouseExited(MouseEvent e)  { btnClose.setForeground(new Color(0xbb, 0xe5, 0xc4)); }
         });
         JPanel closeBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 8));
         closeBar.setOpaque(false);
         closeBar.add(btnClose);
         root.add(closeBar, BorderLayout.NORTH);
 
-        // ── Contenedor central con GridBagLayout → centra el card automáticamente
+        // ── Contenedor central centrado ──────────────────────────────────
         JPanel outer = new JPanel(new GridBagLayout());
         outer.setOpaque(false);
         root.add(outer, BorderLayout.CENTER);
 
-        // ── Card del formulario — ancho fijo 320 px ──────────────────────
         JPanel card = new JPanel();
         card.setOpaque(false);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        // Tamaño fijo: GridBagLayout respeta el preferredSize del componente
         card.setPreferredSize(new Dimension(320, 430));
-        outer.add(card);   // sin constraints → queda perfectamente centrado
+        outer.add(card);
 
-        // Logo Gobernación de Boyacá
+        // ── Logo ─────────────────────────────────────────────────────────
         JLabel logoLabel = new JLabel();
         try {
             java.net.URL logoUrl = getClass().getClassLoader().getResource("logo_boyaca.png");
             if (logoUrl != null) {
                 ImageIcon raw = new ImageIcon(logoUrl);
-                // Escalar a 260x152 manteniendo proporciones (original 1200x700)
                 Image scaled = raw.getImage().getScaledInstance(260, 152, Image.SCALE_SMOOTH);
                 logoLabel.setIcon(new ImageIcon(scaled));
             }
@@ -101,65 +97,66 @@ public class LoginWindow extends JFrame {
         card.add(Box.createVerticalStrut(10));
 
         JLabel lblSub = new JLabel("Sistema de Gestión de Personal", SwingConstants.CENTER);
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblSub.setForeground(new Color(148,163,184));
+        lblSub.setFont(UITheme.FONT_SMALL);
+        lblSub.setForeground(new Color(0xbb, 0xe5, 0xc4));
         lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(lblSub);
         card.add(Box.createVerticalStrut(28));
 
-        // ── Campos — todos con setMaximumSize(320) y CENTER_ALIGNMENT ────
-        card.add(fieldLabel("Usuario"));
+        // ── Campos ───────────────────────────────────────────────────────
+        card.add(loginFieldLabel("Usuario"));
         card.add(Box.createVerticalStrut(4));
-        txtUser = makeField(false);
+        txtUser = makeLoginField(false);
         txtUser.setText("admin");
         card.add(txtUser);
         card.add(Box.createVerticalStrut(14));
 
-        card.add(fieldLabel("Contraseña"));
+        card.add(loginFieldLabel("Contraseña"));
         card.add(Box.createVerticalStrut(4));
-        txtPass = (JPasswordField) makeField(true);
+        txtPass = (JPasswordField) makeLoginField(true);
         txtPass.setText("admin123");
         card.add(txtPass);
         card.add(Box.createVerticalStrut(10));
 
         // Error
         lblError = new JLabel(" ", SwingConstants.CENTER);
-        lblError.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        lblError.setForeground(new Color(252,165,165));
+        lblError.setFont(UITheme.FONT_CAPTION);
+        lblError.setForeground(new Color(0xfc, 0xa5, 0xa5));
         lblError.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(lblError);
         card.add(Box.createVerticalStrut(8));
 
-        // Botón
+        // ── Botón Ingresar (verde primario) ──────────────────────────────
         btnLogin = new JButton("Ingresar") {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getModel().isPressed()  ? new Color(67,56,202)
-                        : getModel().isRollover() ? new Color(99,102,241)
-                          : new Color(79,70,229));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.setColor(getModel().isPressed()  ? UITheme.PRIMARY_DARK.darker()
+                        : getModel().isRollover() ? UITheme.PRIMARY_DARK
+                          : UITheme.PRIMARY);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), UITheme.RADIUS_SM, UITheme.RADIUS_SM);
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
-        btnLogin.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnLogin.setFont(UITheme.FONT_BTN);
         btnLogin.setForeground(Color.WHITE);
-        btnLogin.setContentAreaFilled(false); btnLogin.setBorderPainted(false); btnLogin.setFocusPainted(false);
+        btnLogin.setContentAreaFilled(false);
+        btnLogin.setBorderPainted(false);
+        btnLogin.setFocusPainted(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnLogin.setMaximumSize(new Dimension(320, 44));
-        btnLogin.setPreferredSize(new Dimension(320, 44));
+        btnLogin.setMaximumSize(new Dimension(320, UITheme.BTN_H + 6));
+        btnLogin.setPreferredSize(new Dimension(320, UITheme.BTN_H + 6));
         btnLogin.addActionListener(e -> doLogin());
         card.add(btnLogin);
         card.add(Box.createVerticalStrut(16));
 
-        // Hint
         JLabel hint = new JLabel(
-                "<html><center><font color='#475569'>Por defecto: </font>"
-                        + "<font color='#94a3b8'><b>admin / admin123</b></font></center></html>",
+                "<html><center><font color='#6b8c70'>Por defecto: </font>"
+                        + "<font color='#bbe5c4'><b>admin / admin123</b></font></center></html>",
                 SwingConstants.CENTER);
-        hint.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        hint.setFont(UITheme.FONT_SMALL);
         hint.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(hint);
 
@@ -172,37 +169,38 @@ public class LoginWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    private JLabel fieldLabel(String text) {
+    // Helpers de estilo para el login (fondo oscuro → colores invertidos)
+    // ─────────────────────────────────────────────────────────────────────
+    private JLabel loginFieldLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        l.setForeground(new Color(203,213,225));
+        l.setForeground(new Color(0xbb, 0xe5, 0xc4));
         l.setAlignmentX(Component.CENTER_ALIGNMENT);
         return l;
     }
 
-    private JTextField makeField(boolean password) {
+    private JTextField makeLoginField(boolean password) {
         JTextField f = password ? new JPasswordField() : new JTextField();
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        f.setFont(UITheme.FONT_BODY);
         f.setForeground(Color.WHITE);
-        f.setCaretColor(Color.WHITE);
-        f.setBackground(new Color(30,41,59));
-        // Tamaño fijo = mismo ancho que el botón
-        f.setMaximumSize(new Dimension(320, 44));
-        f.setPreferredSize(new Dimension(320, 44));
-        f.setAlignmentX(Component.CENTER_ALIGNMENT);  // ← clave para el centrado
+        f.setCaretColor(UITheme.PRIMARY_LIGHT);
+        f.setBackground(new Color(0x24, 0x38, 0x28));
+        f.setMaximumSize(new Dimension(320, UITheme.INPUT_H + 6));
+        f.setPreferredSize(new Dimension(320, UITheme.INPUT_H + 6));
+        f.setAlignmentX(Component.CENTER_ALIGNMENT);
         f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(71,85,105), 1, true),
-                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+                BorderFactory.createLineBorder(new Color(0x3d, 0x5c, 0x43), 1, true),
+                BorderFactory.createEmptyBorder(8, 14, 8, 14)));
         f.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 f.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(99,102,241), 2, true),
-                        BorderFactory.createEmptyBorder(9,13,9,13)));
+                        BorderFactory.createLineBorder(UITheme.PRIMARY, 2, true),
+                        BorderFactory.createEmptyBorder(7, 13, 7, 13)));
             }
             public void focusLost(FocusEvent e) {
                 f.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(71,85,105), 1, true),
-                        BorderFactory.createEmptyBorder(10,14,10,14)));
+                        BorderFactory.createLineBorder(new Color(0x3d, 0x5c, 0x43), 1, true),
+                        BorderFactory.createEmptyBorder(8, 14, 8, 14)));
             }
         });
         return f;
