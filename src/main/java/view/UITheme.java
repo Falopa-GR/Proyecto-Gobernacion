@@ -33,7 +33,7 @@ public class UITheme {
     // ─── Paleta ───────────────────────────────────────────────────────────
     public static final Color PRIMARY        = new Color(0x31, 0x8c, 0x45);
     public static final Color PRIMARY_DARK   = new Color(0x23, 0x63, 0x32);
-    public static final Color PRIMARY_LIGHT  = new Color(0xe8, 0xf5, 0xec);
+    public static final Color PRIMARY_LIGHT  = new Color(255, 255, 255);
     public static final Color ACCENT         = new Color(0x2a, 0x7a, 0x3b);
     public static final Color BG             = new Color(0xff, 0xff, 0xff);
     public static final Color BG_SOFT        = new Color(0xf5, 0xf7, 0xf5);

@@ -83,7 +83,7 @@ public class VacationWindow extends JFrame {
         busqueda.add(txtServerId);
 
         JButton btnLoad = UITheme.secondaryButton("Buscar servidor");
-        btnLoad.setForeground(Color.WHITE);
+        btnLoad.setForeground(Color.BLACK);
         btnLoad.addActionListener(e -> loadServerById());
         busqueda.add(btnLoad);
 
@@ -359,7 +359,7 @@ public class VacationWindow extends JFrame {
         if (cedula.isEmpty()) { UITheme.showWarning(this, "Ingresa una cédula."); return; }
         currentServer = serverDAO.findByIdNumber(cedula);
         if (currentServer == null) {
-            UITheme.showDialog(this, "No encontrado", "No se encontró servidor con cédula: " + cedula);
+            showDialog(this, "No encontrado", "No se encontró servidor con cédula: " + cedula);
             clearResumen(); return;
         }
         setTitle("RF-03: Vacaciones — " + currentServer.getFirstName() + " " + currentServer.getLastName());

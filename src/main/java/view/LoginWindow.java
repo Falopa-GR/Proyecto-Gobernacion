@@ -33,8 +33,8 @@ public class LoginWindow extends JFrame {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setPaint(new GradientPaint(0, 0, UITheme.SIDEBAR_BG, 0, getHeight(),
-                        new Color(0x1e, 0x35, 0x22)));
+                g2.setPaint(new GradientPaint(0, 0, UITheme.PRIMARY_LIGHT, 0, getHeight(),
+                        new Color(255, 255, 255)));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
             }
         };
@@ -54,9 +54,9 @@ public class LoginWindow extends JFrame {
         });
 
         // ── Botón cerrar ─────────────────────────────────────────────────
-        JButton btnClose = new JButton("✕");
+        JButton btnClose = new JButton("X");
         btnClose.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btnClose.setForeground(new Color(0xbb, 0xe5, 0xc4));
+        btnClose.setForeground(new Color(55, 82, 59));
         btnClose.setContentAreaFilled(false);
         btnClose.setBorderPainted(false);
         btnClose.setFocusPainted(false);
@@ -64,7 +64,7 @@ public class LoginWindow extends JFrame {
         btnClose.addActionListener(e -> System.exit(0));
         btnClose.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) { btnClose.setForeground(Color.WHITE); }
-            public void mouseExited(MouseEvent e)  { btnClose.setForeground(new Color(0xbb, 0xe5, 0xc4)); }
+            public void mouseExited(MouseEvent e)  { btnClose.setForeground(new Color(17, 23, 18)); }
         });
         JPanel closeBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 8));
         closeBar.setOpaque(false);
@@ -98,7 +98,7 @@ public class LoginWindow extends JFrame {
 
         JLabel lblSub = new JLabel("Sistema de Gestión de Personal", SwingConstants.CENTER);
         lblSub.setFont(UITheme.FONT_SMALL);
-        lblSub.setForeground(new Color(0xbb, 0xe5, 0xc4));
+        lblSub.setForeground(new Color(81, 121, 90));
         lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(lblSub);
         card.add(Box.createVerticalStrut(28));
@@ -169,12 +169,12 @@ public class LoginWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Helpers de estilo para el login (fondo oscuro → colores invertidos)
+    // Helpers de estilo para el login
     // ─────────────────────────────────────────────────────────────────────
     private JLabel loginFieldLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        l.setForeground(new Color(0xbb, 0xe5, 0xc4));
+        l.setForeground(new Color(82, 114, 88));
         l.setAlignmentX(Component.CENTER_ALIGNMENT);
         return l;
     }

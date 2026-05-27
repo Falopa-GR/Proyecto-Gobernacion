@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+
 /**
  * RF-02 — Situaciones Administrativas — estandarizado con UITheme
  */
@@ -95,7 +96,7 @@ public class AdministrativeSituationWindow extends JFrame {
         busqueda.add(txtServerId);
 
         JButton btnLoad = UITheme.secondaryButton("Buscar servidor");
-        btnLoad.setForeground(Color.WHITE);
+        btnLoad.setForeground(Color.BLACK);
         btnLoad.addActionListener(e -> loadServerById());
         busqueda.add(btnLoad);
 
@@ -291,7 +292,7 @@ public class AdministrativeSituationWindow extends JFrame {
         if (id.isEmpty()) { UITheme.showWarning(this, "Ingresa una cédula."); return; }
         currentServer = publicServerDAO.findByIdNumber(id);
         if (currentServer == null) {
-            UITheme.showDialog(this, "No encontrado", "No se encontró servidor con cédula: " + id);
+            showDialog(this, "No encontrado", "No se encontró servidor con cédula: " + id);
             lblSituacionActual.setText("  Situación actual: —");
             return;
         }
@@ -324,7 +325,7 @@ public class AdministrativeSituationWindow extends JFrame {
                         && !hoy.isBefore(s.getStartDate()) && !hoy.isAfter(s.getEndDate()))
                 .findFirst().orElse(null);
         if (activa == null) {
-            lblSituacionActual.setText("  Situación actual: En actividad normal ✓");
+            lblSituacionActual.setText("  Situación actual: En actividad normal ");
             lblSituacionActual.setForeground(UITheme.PRIMARY_LIGHT);
         } else {
             lblSituacionActual.setText("  Situación actual: " + labelFor(activa.getType())

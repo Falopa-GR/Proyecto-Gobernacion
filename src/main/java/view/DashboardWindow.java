@@ -22,22 +22,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * RF-07 — Dashboard principal (hub de la aplicación)
- *
- * Mantiene el diseño visual original (sidebar oscuro, cards, animaciones hover).
- * Cambios sobre la versión anterior:
- *   1. Cards de Inicio: datos reales de la BD (no hardcodeados)
- *   2. Sección "Situaciones Hoy": tabla con todos los servidores ausentes
- *   3. Sección "Vacaciones Deuda": alertas RF-03
- *   4. Sección "Historial": búsqueda por servidor + tabla situaciones
- *   5. Sección "Reportes": botones de exportar a Excel y PDF
- *   6. Sidebar conecta RF-01 y RF-02 existentes; RF-03 si existe VacationWindow
- *   7. Los datos se cargan en background (SwingWorker) para no bloquear la UI
- */
 public class DashboardWindow extends JFrame {
 
-    // ── Sidebar buttons ────────────────────────────────────────────────
     private SidebarButton btnInicio;
     private SidebarButton btnSituaciones;
     private SidebarButton btnVacaciones;
@@ -47,17 +33,14 @@ public class DashboardWindow extends JFrame {
 
     private JPanel contentPanel;
 
-    // ── Búsqueda global ────────────────────────────────────────────────
-    private JTextField      searchField;
-    private JPopupMenu      searchPopup;
+    private JTextField     searchField;
+    private JPopupMenu     searchPopup;
     private javax.swing.Timer searchDebounceTimer;
 
-    // ── DAOs ──────────────────────────────────────────────────────────
     private final PublicServerDAO            serverDAO    = new PublicServerDAO();
     private final AdministrativeSituationDAO situationDAO = new AdministrativeSituationDAO();
     private final VacationPeriodDAO          vacationDAO  = new VacationPeriodDAO();
 
-    // ── Cards del inicio (referencias para actualizar) ─────────────────
     private JLabel valActivos;
     private JLabel valVacaciones;
     private JLabel valPermisos;
@@ -66,7 +49,6 @@ public class DashboardWindow extends JFrame {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private User currentUser;
 
-    // ─────────────────────────────────────────────────────────────────────
     public DashboardWindow(User user) {
         this.currentUser = user;
         AuthService.setCurrentUser(user);
@@ -80,16 +62,15 @@ public class DashboardWindow extends JFrame {
         contentPanel = new JPanel(new BorderLayout());
         contentPanel.setOpaque(false);
 
-        add(createSidebar(),  BorderLayout.WEST);
+        add(createSidebar(), BorderLayout.WEST);
 
         JPanel main = new JPanel(new BorderLayout());
-        main.setBackground(new Color(245, 247, 250));
+        main.setBackground(UITheme.BG_SOFT);
         main.setBorder(new EmptyBorder(16, 16, 16, 16));
-        main.add(createHeader(),    BorderLayout.NORTH);
-        main.add(contentPanel,      BorderLayout.CENTER);
+        main.add(createHeader(),  BorderLayout.NORTH);
+        main.add(contentPanel,    BorderLayout.CENTER);
         add(main, BorderLayout.CENTER);
 
-        // Mostrar inicio y cargar datos reales
         showInicio();
     }
 
@@ -99,11 +80,11 @@ public class DashboardWindow extends JFrame {
     private JPanel createSidebar() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setPreferredSize(new Dimension(240, 0));
-        panel.setBackground(new Color(17, 24, 39));
+        panel.setBackground(UITheme.SIDEBAR_BG);
 
-        // Logo Gobernación de Boyacá
+        // Logo
         JPanel top = new JPanel(new BorderLayout());
-        top.setBackground(panel.getBackground());
+        top.setBackground(UITheme.SIDEBAR_BG);
         top.setBorder(new EmptyBorder(12, 12, 8, 12));
 
         JLabel logoSidebar = new JLabel();
@@ -112,22 +93,20 @@ public class DashboardWindow extends JFrame {
             java.net.URL logoUrl = getClass().getClassLoader().getResource("logo_boyaca.png");
             if (logoUrl != null) {
                 ImageIcon raw = new ImageIcon(logoUrl);
-                // En el sidebar: 200x116 (sidebar es 240px, con padding queda 216px disponibles)
                 Image scaled = raw.getImage().getScaledInstance(200, 116, Image.SCALE_SMOOTH);
                 logoSidebar.setIcon(new ImageIcon(scaled));
             }
         } catch (Exception ignored) {}
         top.add(logoSidebar, BorderLayout.CENTER);
 
-        // Línea separadora bajo el logo
         JSeparator sep = new JSeparator();
-        sep.setForeground(new Color(55, 65, 81));
+        sep.setForeground(UITheme.SIDEBAR_HOVER);
         top.add(sep, BorderLayout.SOUTH);
         panel.add(top, BorderLayout.NORTH);
 
         // Menú
         JPanel menu = new JPanel();
-        menu.setBackground(panel.getBackground());
+        menu.setBackground(UITheme.SIDEBAR_BG);
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
         menu.setBorder(new EmptyBorder(8, 8, 8, 8));
 
@@ -159,9 +138,9 @@ public class DashboardWindow extends JFrame {
 
         panel.add(menu, BorderLayout.CENTER);
 
-        // Accesos directos RF-02 y RF-03 en la parte inferior
+        // Accesos directos en el pie del sidebar
         JPanel bottom = new JPanel();
-        bottom.setBackground(panel.getBackground());
+        bottom.setBackground(UITheme.SIDEBAR_BG);
         bottom.setLayout(new BoxLayout(bottom, BoxLayout.Y_AXIS));
         bottom.setBorder(new EmptyBorder(0, 8, 16, 8));
 
@@ -178,8 +157,8 @@ public class DashboardWindow extends JFrame {
 
     private JButton makeBottomLink(String text, ActionListener al) {
         JButton btn = new JButton(text);
-        btn.setForeground(new Color(148, 163, 184));
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btn.setForeground(UITheme.TEXT_HINT);
+        btn.setFont(UITheme.FONT_SMALL);
         btn.setFocusPainted(false);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
@@ -188,7 +167,7 @@ public class DashboardWindow extends JFrame {
         btn.addActionListener(al);
         btn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) { btn.setForeground(Color.WHITE); }
-            public void mouseExited(MouseEvent e)  { btn.setForeground(new Color(148, 163, 184)); }
+            public void mouseExited(MouseEvent e)  { btn.setForeground(UITheme.TEXT_HINT); }
         });
         return btn;
     }
@@ -214,7 +193,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // HEADER (búsqueda global — sin cambios sobre el original)
+    // HEADER
     // ─────────────────────────────────────────────────────────────────────
     private JPanel createHeader() {
         JPanel header = new JPanel(new BorderLayout());
@@ -226,9 +205,9 @@ public class DashboardWindow extends JFrame {
         searchField = new JTextField();
         searchField.setPreferredSize(new Dimension(340, 36));
         searchField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(209, 213, 219)),
+                BorderFactory.createLineBorder(UITheme.BORDER),
                 BorderFactory.createEmptyBorder(6, 12, 6, 12)));
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        searchField.setFont(UITheme.FONT_BODY);
         searchField.putClientProperty("JTextField.placeholderText", "Buscar servidor por nombre o cédula...");
         left.add(searchField);
         header.add(left, BorderLayout.WEST);
@@ -236,34 +215,33 @@ public class DashboardWindow extends JFrame {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         right.setOpaque(false);
 
-        JButton btnRefresh = new JButton("  Actualizar");
-        btnRefresh.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JButton btnRefresh = UITheme.ghostButton("  Actualizar");
+        btnRefresh.setForeground(UITheme.PRIMARY);
         btnRefresh.addActionListener(e -> refreshDashboardCards());
         right.add(btnRefresh);
 
         JLabel avatar = new JLabel("  " + (currentUser != null ? currentUser.getFullName() : "Usuario"));
-        avatar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        avatar.setFont(UITheme.FONT_BODY);
+        avatar.setForeground(UITheme.TEXT_MAIN);
 
-        // Badge de rol
-        String roleTxt = currentUser != null ? switch(currentUser.getRole()){
-            case ADMIN   -> "ADMIN";
-            case GESTOR  -> "GESTOR";
-            case CONSULTA-> "CONSULTA";
+        String roleTxt = currentUser != null ? switch (currentUser.getRole()) {
+            case ADMIN    -> "ADMIN";
+            case GESTOR   -> "GESTOR";
+            case CONSULTA -> "CONSULTA";
         } : "";
         Color roleColor = currentUser != null && currentUser.getRole() == User.Role.ADMIN
-                ? new Color(239,68,68)
+                ? UITheme.ERROR
                 : currentUser != null && currentUser.getRole() == User.Role.GESTOR
-                  ? new Color(245,158,11) : new Color(107,114,128);
+                  ? UITheme.WARNING : UITheme.TEXT_SUB;
+
         JLabel roleBadge = new JLabel("  " + roleTxt + "  ");
-        roleBadge.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        roleBadge.setFont(UITheme.FONT_BADGE);
         roleBadge.setOpaque(true);
         roleBadge.setBackground(roleColor);
         roleBadge.setForeground(Color.WHITE);
-        roleBadge.setBorder(BorderFactory.createEmptyBorder(2,6,2,6));
+        roleBadge.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
 
-        JButton btnLogout = new JButton("Salir");
-        btnLogout.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        btnLogout.setFocusPainted(false);
+        JButton btnLogout = UITheme.dangerButton("Salir");
         btnLogout.addActionListener(e -> {
             AuthService.logout();
             dispose();
@@ -275,7 +253,6 @@ public class DashboardWindow extends JFrame {
         right.add(btnLogout);
         header.add(right, BorderLayout.EAST);
 
-        // Debounce search
         searchPopup = new JPopupMenu();
         searchPopup.setFocusable(false);
         searchDebounceTimer = new javax.swing.Timer(300, e -> performSearch());
@@ -290,7 +267,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // SECCIÓN: INICIO — cards con datos reales
+    // SECCIÓN: INICIO
     // ─────────────────────────────────────────────────────────────────────
     private void showInicio() {
         setActive(btnInicio);
@@ -299,34 +276,34 @@ public class DashboardWindow extends JFrame {
         JPanel root = new JPanel(new BorderLayout(0, 16));
         root.setOpaque(false);
 
-        // ── Cards superiores ──
         JPanel cards = new JPanel(new GridLayout(1, 4, 16, 0));
         cards.setOpaque(false);
 
-        valActivos   = new JLabel("...");
-        valVacaciones= new JLabel("...");
-        valPermisos  = new JLabel("...");
-        valDeudaVac  = new JLabel("...");
+        valActivos    = new JLabel("...");
+        valVacaciones = new JLabel("...");
+        valPermisos   = new JLabel("...");
+        valDeudaVac   = new JLabel("...");
 
-        cards.add(createLiveCard("Servidores Activos",    valActivos,    "👥", new Color(59, 130, 246)));
-        cards.add(createLiveCard("En Vacaciones Hoy",     valVacaciones, "🏖", new Color(16, 185, 129)));
-        cards.add(createLiveCard("Permisos Hoy",          valPermisos,   "📋", new Color(245, 158, 11)));
-        cards.add(createLiveCard("Deuda de Vacaciones",   valDeudaVac,   "⚠", new Color(239, 68, 68)));
+        // Cards usando colores de UITheme
+        cards.add(createLiveCard("Servidores Activos",  valActivos,    "👥", UITheme.PRIMARY));
+        cards.add(createLiveCard("En Vacaciones Hoy",   valVacaciones, "🏖", UITheme.ACCENT));
+        cards.add(createLiveCard("Permisos Hoy",        valPermisos,   "📋", UITheme.WARNING));
+        cards.add(createLiveCard("Deuda de Vacaciones", valDeudaVac,   "⚠",  UITheme.ERROR));
         root.add(cards, BorderLayout.NORTH);
 
-        // ── Gráfico ausentismo ──
         JPanel middle = new JPanel(new GridBagLayout());
         middle.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets  = new Insets(0, 0, 0, 16);
         gbc.fill    = GridBagConstraints.BOTH;
         gbc.weightx = 0.65; gbc.weighty = 1;
-        gbc.gridx = 0;
+        gbc.gridx   = 0;
 
         CardPanel chartCard = new CardPanel();
         chartCard.setLayout(new BorderLayout(0, 8));
         JLabel chartTitle = new JLabel("Ausentismo últimos 12 meses");
-        chartTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        chartTitle.setFont(UITheme.FONT_H3);
+        chartTitle.setForeground(UITheme.TEXT_MAIN);
         chartCard.add(chartTitle, BorderLayout.NORTH);
         chartCard.add(new AusentismoChartPanel(), BorderLayout.CENTER);
         middle.add(chartCard, gbc);
@@ -334,33 +311,28 @@ public class DashboardWindow extends JFrame {
         gbc.gridx = 1; gbc.weightx = 0.35; gbc.insets = new Insets(0, 0, 0, 0);
         JPanel rightCol = new JPanel(new GridLayout(3, 1, 0, 12));
         rightCol.setOpaque(false);
-        rightCol.add(createMiniCard("Módulo RF-01",  "Planta de Personal",        () -> new PublicServerWindow().setVisible(true)));
-        rightCol.add(createMiniCard("Módulo RF-02",  "Situaciones Administrativas",() -> new AdministrativeSituationWindow().setVisible(true)));
-        rightCol.add(createMiniCard("Módulo RF-03",  "Control de Vacaciones",     this::openVacationWindow));
+        rightCol.add(createMiniCard("Módulo RF-01", "Planta de Personal",         () -> new PublicServerWindow().setVisible(true)));
+        rightCol.add(createMiniCard("Módulo RF-02", "Situaciones Administrativas", () -> new AdministrativeSituationWindow().setVisible(true)));
+        rightCol.add(createMiniCard("Módulo RF-03", "Control de Vacaciones",       this::openVacationWindow));
         middle.add(rightCol, gbc);
 
         root.add(middle, BorderLayout.CENTER);
-
         contentPanel.add(root, BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
 
-        // Cargar datos reales en background
         refreshDashboardCards();
     }
 
-    /** Carga los 4 valores de las cards en un SwingWorker para no bloquear la UI */
     private void refreshDashboardCards() {
         new SwingWorker<long[], Void>() {
-            @Override
             protected long[] doInBackground() {
-                long activos    = serverDAO.countActive();
-                long vacHoy     = situationDAO.countByTypeToday(SituationType.VACATION);
-                long permHoy    = situationDAO.countPermissionsToday();
-                long deuda      = vacationDAO.countServersInDebt(serverDAO.findAllActive());
+                long activos = serverDAO.countActive();
+                long vacHoy  = situationDAO.countByTypeToday(SituationType.VACATION);
+                long permHoy = situationDAO.countPermissionsToday();
+                long deuda   = vacationDAO.countServersInDebt(serverDAO.findAllActive());
                 return new long[]{activos, vacHoy, permHoy, deuda};
             }
-            @Override
             protected void done() {
                 try {
                     long[] v = get();
@@ -374,7 +346,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // SECCIÓN: SITUACIONES HOY — RF-07
+    // SECCIÓN: SITUACIONES HOY
     // ─────────────────────────────────────────────────────────────────────
     private void showSituacionesHoy() {
         setActive(btnSituaciones);
@@ -384,7 +356,8 @@ public class DashboardWindow extends JFrame {
         root.setOpaque(false);
 
         JLabel title = new JLabel("Servidores con situación administrativa activa hoy  —  " + LocalDate.now().format(FMT));
-        title.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        title.setFont(UITheme.FONT_H2);
+        title.setForeground(UITheme.TEXT_MAIN);
         root.add(title, BorderLayout.NORTH);
 
         String[] headers = ExportService.HEADERS_SITUACIONES;
@@ -393,20 +366,17 @@ public class DashboardWindow extends JFrame {
         };
         JTable table = buildStyledTable(model);
 
-        // Botones de exportar
         JPanel btnBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         btnBar.setOpaque(false);
-        JButton btnXls = exportBtn(" Excel", () -> {
+        btnBar.add(exportBtn(" Excel", () -> {
             List<String[]> rows = buildSituacionesRows(model);
             ExportService.exportToExcel(this, "situaciones_hoy", headers, rows);
-        });
-        JButton btnPdf = exportBtn(" PDF", () -> {
+        }));
+        btnBar.add(exportBtn(" PDF", () -> {
             List<String[]> rows = buildSituacionesRows(model);
             ExportService.exportToPdf(this, "situaciones_hoy",
                     "Situaciones Administrativas Activas — " + LocalDate.now().format(FMT), headers, rows);
-        });
-        btnBar.add(btnXls);
-        btnBar.add(btnPdf);
+        }));
 
         CardPanel card = new CardPanel();
         card.setLayout(new BorderLayout(0, 8));
@@ -418,16 +388,11 @@ public class DashboardWindow extends JFrame {
         contentPanel.revalidate();
         contentPanel.repaint();
 
-        // Cargar datos en background
         new SwingWorker<List<AdministrativeSituation>, Void>() {
-            protected List<AdministrativeSituation> doInBackground() {
-                return situationDAO.findActiveToday();
-            }
+            protected List<AdministrativeSituation> doInBackground() { return situationDAO.findActiveToday(); }
             protected void done() {
-                try {
-                    for (AdministrativeSituation a : get())
-                        model.addRow(ExportService.situacionToRow(a));
-                } catch (Exception ex) { ex.printStackTrace(); }
+                try { for (AdministrativeSituation a : get()) model.addRow(ExportService.situacionToRow(a)); }
+                catch (Exception ex) { ex.printStackTrace(); }
             }
         }.execute();
     }
@@ -444,7 +409,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // SECCIÓN: ALERTAS VACACIONES — RF-07
+    // SECCIÓN: ALERTAS VACACIONES
     // ─────────────────────────────────────────────────────────────────────
     private void showAlertasVacaciones() {
         setActive(btnVacaciones);
@@ -454,8 +419,8 @@ public class DashboardWindow extends JFrame {
         root.setOpaque(false);
 
         JLabel title = new JLabel("  Servidores con deuda de vacaciones (> 1 período pendiente)");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        title.setForeground(new Color(239, 68, 68));
+        title.setFont(UITheme.FONT_H2);
+        title.setForeground(UITheme.ERROR);
         root.add(title, BorderLayout.NORTH);
 
         String[] headers = ExportService.HEADERS_VACACIONES_DEUDA;
@@ -463,14 +428,13 @@ public class DashboardWindow extends JFrame {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         JTable table = buildStyledTable(model);
-        // Filas en rojo
         table.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 Component comp = super.getTableCellRendererComponent(t, v, sel, foc, r, c);
                 if (!sel) {
                     Object p = model.getValueAt(r, 7);
                     int periods = p instanceof Number n ? n.intValue() : 0;
-                    comp.setBackground(periods >= 3 ? new Color(254, 226, 226) : new Color(254, 243, 199));
+                    comp.setBackground(periods >= 3 ? UITheme.ERROR_LIGHT : UITheme.WARNING_LIGHT);
                 }
                 return comp;
             }
@@ -497,8 +461,7 @@ public class DashboardWindow extends JFrame {
 
         new SwingWorker<List<PublicServer>, Void>() {
             protected List<PublicServer> doInBackground() {
-                List<PublicServer> activos = serverDAO.findAllActive();
-                return vacationDAO.findServersInDebt(activos);
+                return vacationDAO.findServersInDebt(serverDAO.findAllActive());
             }
             protected void done() {
                 try {
@@ -526,7 +489,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // SECCIÓN: HISTORIAL POR SERVIDOR — RF-07
+    // SECCIÓN: HISTORIAL
     // ─────────────────────────────────────────────────────────────────────
     private void showHistorial() {
         setActive(btnHistorial);
@@ -535,17 +498,20 @@ public class DashboardWindow extends JFrame {
         JPanel root = new JPanel(new BorderLayout(0, 12));
         root.setOpaque(false);
 
-        // Barra de búsqueda
         JPanel busqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         busqueda.setOpaque(false);
-        busqueda.add(new JLabel("Cédula:"));
-        JTextField txtCedula = new JTextField(14);
+        JLabel lblCed = new JLabel("Cédula:");
+        lblCed.setForeground(UITheme.TEXT_MAIN);
+        lblCed.setFont(UITheme.FONT_BODY);
+        busqueda.add(lblCed);
+        JTextField txtCedula = UITheme.styledInput("");
+        txtCedula.setPreferredSize(new Dimension(160, UITheme.INPUT_H));
         busqueda.add(txtCedula);
-        JButton btnBuscar = new JButton("Buscar historial");
+        JButton btnBuscar = UITheme.primaryButton("Buscar historial");
         busqueda.add(btnBuscar);
         JLabel lblNombre = new JLabel(" ");
-        lblNombre.setFont(new Font("Segoe UI", Font.ITALIC, 13));
-        lblNombre.setForeground(new Color(75, 85, 99));
+        lblNombre.setFont(UITheme.FONT_CAPTION);
+        lblNombre.setForeground(UITheme.TEXT_SUB);
         busqueda.add(lblNombre);
         root.add(busqueda, BorderLayout.NORTH);
 
@@ -606,7 +572,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // SECCIÓN: REPORTES — RF-07
+    // SECCIÓN: REPORTES
     // ─────────────────────────────────────────────────────────────────────
     private void showReportes() {
         setActive(btnReportes);
@@ -616,81 +582,32 @@ public class DashboardWindow extends JFrame {
         root.setOpaque(false);
 
         JLabel title = new JLabel("Reportes — Exportar a Excel o PDF");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setFont(UITheme.FONT_H1);
+        title.setForeground(UITheme.TEXT_MAIN);
         root.add(title, BorderLayout.NORTH);
 
         JPanel grid = new JPanel(new GridLayout(2, 2, 16, 16));
         grid.setOpaque(false);
 
-        grid.add(createReportCard(
-                "  Planta Activa",
+        grid.add(createReportCard("  Planta Activa",
                 "Todos los servidores activos con cargo, dependencia y salario.",
-                () -> {
-                    List<PublicServer> lista = serverDAO.findAllActive();
-                    List<String[]> rows = new ArrayList<>();
-                    lista.forEach(s -> rows.add(ExportService.serverToRow(s)));
-                    ExportService.exportToExcel(this, "planta_activa", ExportService.HEADERS_PLANTA, rows);
-                },
-                () -> {
-                    List<PublicServer> lista = serverDAO.findAllActive();
-                    List<String[]> rows = new ArrayList<>();
-                    lista.forEach(s -> rows.add(ExportService.serverToRow(s)));
-                    ExportService.exportToPdf(this, "planta_activa", "Planta Activa de Personal",
-                            ExportService.HEADERS_PLANTA, rows);
-                }
+                () -> { List<PublicServer> l = serverDAO.findAllActive(); List<String[]> r = new ArrayList<>(); l.forEach(s -> r.add(ExportService.serverToRow(s))); ExportService.exportToExcel(this, "planta_activa", ExportService.HEADERS_PLANTA, r); },
+                () -> { List<PublicServer> l = serverDAO.findAllActive(); List<String[]> r = new ArrayList<>(); l.forEach(s -> r.add(ExportService.serverToRow(s))); ExportService.exportToPdf(this, "planta_activa", "Planta Activa de Personal", ExportService.HEADERS_PLANTA, r); }
         ));
-
-        grid.add(createReportCard(
-                "  Situaciones Hoy",
+        grid.add(createReportCard("  Situaciones Hoy",
                 "Servidores con situación administrativa activa en la fecha actual.",
-                () -> {
-                    List<AdministrativeSituation> lista = situationDAO.findActiveToday();
-                    List<String[]> rows = new ArrayList<>();
-                    lista.forEach(a -> rows.add(ExportService.situacionToRow(a)));
-                    ExportService.exportToExcel(this, "situaciones_hoy", ExportService.HEADERS_SITUACIONES, rows);
-                },
-                () -> {
-                    List<AdministrativeSituation> lista = situationDAO.findActiveToday();
-                    List<String[]> rows = new ArrayList<>();
-                    lista.forEach(a -> rows.add(ExportService.situacionToRow(a)));
-                    ExportService.exportToPdf(this, "situaciones_hoy",
-                            "Situaciones Activas — " + LocalDate.now().format(FMT),
-                            ExportService.HEADERS_SITUACIONES, rows);
-                }
+                () -> { List<AdministrativeSituation> l = situationDAO.findActiveToday(); List<String[]> r = new ArrayList<>(); l.forEach(a -> r.add(ExportService.situacionToRow(a))); ExportService.exportToExcel(this, "situaciones_hoy", ExportService.HEADERS_SITUACIONES, r); },
+                () -> { List<AdministrativeSituation> l = situationDAO.findActiveToday(); List<String[]> r = new ArrayList<>(); l.forEach(a -> r.add(ExportService.situacionToRow(a))); ExportService.exportToPdf(this, "situaciones_hoy", "Situaciones Activas — " + LocalDate.now().format(FMT), ExportService.HEADERS_SITUACIONES, r); }
         ));
-
-        grid.add(createReportCard(
-                "  Deuda de Vacaciones",
+        grid.add(createReportCard("  Deuda de Vacaciones",
                 "Servidores con más de un período de vacaciones sin disfrutar.",
-                () -> {
-                    List<PublicServer> deuda = vacationDAO.findServersInDebt(serverDAO.findAllActive());
-                    List<String[]> rows = buildDeudaRows(deuda);
-                    ExportService.exportToExcel(this, "deuda_vacaciones", ExportService.HEADERS_VACACIONES_DEUDA, rows);
-                },
-                () -> {
-                    List<PublicServer> deuda = vacationDAO.findServersInDebt(serverDAO.findAllActive());
-                    List<String[]> rows = buildDeudaRows(deuda);
-                    ExportService.exportToPdf(this, "deuda_vacaciones", "Servidores con Deuda de Vacaciones",
-                            ExportService.HEADERS_VACACIONES_DEUDA, rows);
-                }
+                () -> { List<String[]> r = buildDeudaRows(vacationDAO.findServersInDebt(serverDAO.findAllActive())); ExportService.exportToExcel(this, "deuda_vacaciones", ExportService.HEADERS_VACACIONES_DEUDA, r); },
+                () -> { List<String[]> r = buildDeudaRows(vacationDAO.findServersInDebt(serverDAO.findAllActive())); ExportService.exportToPdf(this, "deuda_vacaciones", "Servidores con Deuda de Vacaciones", ExportService.HEADERS_VACACIONES_DEUDA, r); }
         ));
-
-        grid.add(createReportCard(
-                "  Ausentismo",
+        grid.add(createReportCard("  Ausentismo",
                 "Resumen de todas las situaciones del año en curso por tipo.",
-                () -> {
-                    List<AdministrativeSituation> lista = situationDAO.findActiveToday();
-                    List<String[]> rows = new ArrayList<>();
-                    lista.forEach(a -> rows.add(ExportService.situacionToRow(a)));
-                    ExportService.exportToExcel(this, "ausentismo", ExportService.HEADERS_SITUACIONES, rows);
-                },
-                () -> {
-                    List<AdministrativeSituation> lista = situationDAO.findActiveToday();
-                    List<String[]> rows = new ArrayList<>();
-                    lista.forEach(a -> rows.add(ExportService.situacionToRow(a)));
-                    ExportService.exportToPdf(this, "ausentismo", "Estadísticas de Ausentismo",
-                            ExportService.HEADERS_SITUACIONES, rows);
-                }
+                () -> { List<AdministrativeSituation> l = situationDAO.findActiveToday(); List<String[]> r = new ArrayList<>(); l.forEach(a -> r.add(ExportService.situacionToRow(a))); ExportService.exportToExcel(this, "ausentismo", ExportService.HEADERS_SITUACIONES, r); },
+                () -> { List<AdministrativeSituation> l = situationDAO.findActiveToday(); List<String[]> r = new ArrayList<>(); l.forEach(a -> r.add(ExportService.situacionToRow(a))); ExportService.exportToPdf(this, "ausentismo", "Estadísticas de Ausentismo", ExportService.HEADERS_SITUACIONES, r); }
         ));
 
         root.add(grid, BorderLayout.CENTER);
@@ -719,7 +636,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // BÚSQUEDA GLOBAL (igual que el original)
+    // BÚSQUEDA GLOBAL
     // ─────────────────────────────────────────────────────────────────────
     private void performSearch() {
         String q = searchField.getText().trim();
@@ -751,9 +668,11 @@ public class DashboardWindow extends JFrame {
             list.setCellRenderer((l, v, i, sel, foc) -> {
                 JPanel p = new JPanel(new BorderLayout());
                 p.setBorder(new EmptyBorder(6, 10, 6, 10));
-                p.setBackground(sel ? new Color(230, 238, 255) : Color.WHITE);
-                p.add(new JLabel(String.format("<html><b>%s</b> — %s %s</html>",
-                        v.getIdNumber(), v.getFirstName(), v.getLastName())));
+                p.setBackground(sel ? UITheme.PRIMARY_LIGHT : Color.WHITE);
+                JLabel lbl = new JLabel(String.format("<html><b>%s</b> — %s %s</html>",
+                        v.getIdNumber(), v.getFirstName(), v.getLastName()));
+                lbl.setForeground(sel ? UITheme.PRIMARY_DARK : UITheme.TEXT_MAIN);
+                p.add(lbl);
                 return p;
             });
             list.addMouseListener(new MouseAdapter() {
@@ -774,15 +693,12 @@ public class DashboardWindow extends JFrame {
     private void openServerResult(PublicServer s) {
         if (s == null) return;
         searchPopup.setVisible(false);
-        // Abrir perfil integrado RF-08
         new ServerProfileWindow(s).setVisible(true);
     }
 
     // ─────────────────────────────────────────────────────────────────────
     // HELPERS DE UI
     // ─────────────────────────────────────────────────────────────────────
-
-    /** Card con valor en vivo (el JLabel se actualiza desde refreshDashboardCards) */
     private CardPanel createLiveCard(String title, JLabel valueLabel, String icon, Color accent) {
         CardPanel card = new CardPanel();
         card.setLayout(new BorderLayout(0, 4));
@@ -794,8 +710,8 @@ public class DashboardWindow extends JFrame {
         ico.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
         top.add(ico);
         JLabel lbl = new JLabel(title);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lbl.setForeground(new Color(75, 85, 99));
+        lbl.setFont(UITheme.FONT_SMALL);
+        lbl.setForeground(UITheme.TEXT_SUB);
         top.add(lbl);
         card.add(top, BorderLayout.NORTH);
 
@@ -807,46 +723,38 @@ public class DashboardWindow extends JFrame {
         return card;
     }
 
-    /** Mini card con botón de acceso rápido */
     private CardPanel createMiniCard(String badge, String label, Runnable action) {
         CardPanel card = new CardPanel();
         card.setLayout(new BorderLayout(0, 6));
 
         JLabel lblBadge = new JLabel(badge);
-        lblBadge.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        lblBadge.setForeground(new Color(99, 102, 241));
+        lblBadge.setFont(UITheme.FONT_BADGE);
+        lblBadge.setForeground(UITheme.PRIMARY);
         card.add(lblBadge, BorderLayout.NORTH);
 
         JLabel lblLabel = new JLabel(label);
-        lblLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblLabel.setFont(UITheme.FONT_BODY);
+        lblLabel.setForeground(UITheme.TEXT_MAIN);
         card.add(lblLabel, BorderLayout.CENTER);
 
-        JButton btn = new JButton("Abrir →");
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        btn.setFocusPainted(false);
-        btn.setBackground(new Color(99, 102, 241));
-        btn.setForeground(Color.WHITE);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn = UITheme.primaryButton("Abrir →");
         btn.addActionListener(e -> action.run());
         card.add(btn, BorderLayout.SOUTH);
         return card;
     }
 
-    /** Card de reporte con dos botones (Excel y PDF) */
-    private CardPanel createReportCard(String title, String desc,
-                                       Runnable onExcel, Runnable onPdf) {
+    private CardPanel createReportCard(String title, String desc, Runnable onExcel, Runnable onPdf) {
         CardPanel card = new CardPanel();
         card.setLayout(new BorderLayout(0, 10));
 
         JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTitle.setFont(UITheme.FONT_H2);
+        lblTitle.setForeground(UITheme.TEXT_MAIN);
         card.add(lblTitle, BorderLayout.NORTH);
 
         JLabel lblDesc = new JLabel("<html>" + desc + "</html>");
-        lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblDesc.setForeground(new Color(107, 114, 128));
+        lblDesc.setFont(UITheme.FONT_BODY);
+        lblDesc.setForeground(UITheme.TEXT_SUB);
         card.add(lblDesc, BorderLayout.CENTER);
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
@@ -858,33 +766,22 @@ public class DashboardWindow extends JFrame {
     }
 
     private JButton exportBtn(String text, Runnable action) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn = UITheme.secondaryButton(text);
         btn.addActionListener(e -> action.run());
         return btn;
     }
 
     private JTable buildStyledTable(DefaultTableModel model) {
-        JTable table = new JTable(model);
-        table.setRowHeight(28);
-        table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
+        JTable table = UITheme.styledTable(model);
         table.setFillsViewportHeight(true);
-        table.setSelectionBackground(new Color(226, 232, 240));
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         return table;
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // GRÁFICO DE AUSENTISMO (visual mejorado sobre el original)
+    // GRÁFICO DE AUSENTISMO
     // ─────────────────────────────────────────────────────────────────────
     private static class AusentismoChartPanel extends JPanel {
-        // Meses abreviados en español
         private static final String[] MESES = {"Jun","Jul","Ago","Sep","Oct","Nov","Dic","Ene","Feb","Mar","Abr","May"};
-        // Datos placeholder — en una versión futura leer de la BD
         private static final int[]    VALS  = {8, 12, 7, 15, 10, 9, 6, 14, 11, 8, 7, 5};
 
         public AusentismoChartPanel() {
@@ -902,7 +799,7 @@ public class DashboardWindow extends JFrame {
             int maxVal = 20;
 
             // Guías horizontales
-            g2.setColor(new Color(229, 231, 235));
+            g2.setColor(UITheme.BORDER);
             for (int i = 0; i <= 4; i++) {
                 int y = pad + (h - pad * 2) * i / 4;
                 g2.drawLine(pad, y, w - pad, y);
@@ -910,27 +807,26 @@ public class DashboardWindow extends JFrame {
 
             // Barras
             for (int i = 0; i < VALS.length; i++) {
-                int x   = pad + i * ((w - pad * 2) / VALS.length) + 3;
-                int bh  = (int) ((double) VALS[i] / maxVal * (h - pad * 2));
-                int y   = h - pad - bh;
+                int x  = pad + i * ((w - pad * 2) / VALS.length) + 3;
+                int bh = (int) ((double) VALS[i] / maxVal * (h - pad * 2));
+                int y  = h - pad - bh;
 
-                // Sombra suave
-                g2.setColor(new Color(59, 130, 246, 40));
+                // Sombra
+                g2.setColor(new Color(UITheme.PRIMARY.getRed(), UITheme.PRIMARY.getGreen(), UITheme.PRIMARY.getBlue(), 40));
                 g2.fillRoundRect(x + 2, y + 2, barW, bh, 6, 6);
 
-                // Barra principal con degradado
-                GradientPaint gp = new GradientPaint(x, y, new Color(99, 102, 241),
-                        x, h - pad, new Color(59, 130, 246));
+                // Barra con degradado PRIMARY → ACCENT
+                GradientPaint gp = new GradientPaint(x, y, UITheme.PRIMARY_DARK, x, h - pad, UITheme.PRIMARY);
                 g2.setPaint(gp);
                 g2.fillRoundRect(x, y, barW, bh, 6, 6);
 
                 // Etiqueta mes
-                g2.setColor(new Color(107, 114, 128));
-                g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                g2.setColor(UITheme.TEXT_SUB);
+                g2.setFont(UITheme.FONT_CAPTION);
                 g2.drawString(MESES[i], x + barW / 2 - 9, h - pad + 14);
 
                 // Valor encima
-                g2.setColor(new Color(55, 65, 81));
+                g2.setColor(UITheme.TEXT_MAIN);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 10));
                 g2.drawString(String.valueOf(VALS[i]), x + barW / 2 - 4, y - 4);
             }
@@ -938,7 +834,7 @@ public class DashboardWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // CardPanel y SidebarButton — idénticos al original
+    // CardPanel y SidebarButton
     // ─────────────────────────────────────────────────────────────────────
     static class CardPanel extends JPanel {
         public CardPanel() {
@@ -951,7 +847,7 @@ public class DashboardWindow extends JFrame {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(new Color(0, 0, 0, 25));
             g2.fillRoundRect(sg, sg, getWidth() - sg * 2, getHeight() - sg * 2, arc, arc);
-            g2.setColor(Color.WHITE);
+            g2.setColor(UITheme.SURFACE);
             g2.fillRoundRect(0, 0, getWidth() - sg, getHeight() - sg, arc, arc);
             g2.dispose();
             super.paintComponent(g);
@@ -962,8 +858,9 @@ public class DashboardWindow extends JFrame {
     private static class SidebarButton extends JPanel {
         private final JLabel lblIcon, lblText;
         private final JPanel indicator;
-        private Color current = new Color(17, 24, 39);
-        private final Color base = new Color(17, 24, 39), hoverC = new Color(30, 41, 59);
+        private Color current;
+        private final Color base  = UITheme.SIDEBAR_BG;
+        private final Color hoverC = UITheme.SIDEBAR_HOVER;
         private javax.swing.Timer animTimer;
         private float animProg = 0f;
 
@@ -973,10 +870,11 @@ public class DashboardWindow extends JFrame {
             setPreferredSize(new Dimension(200, 52));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setOpaque(false);
+            current = base;
 
             indicator = new JPanel();
             indicator.setPreferredSize(new Dimension(4, 52));
-            indicator.setBackground(new Color(99, 102, 241));
+            indicator.setBackground(UITheme.SIDEBAR_ACTIVE);
             indicator.setVisible(false);
             add(indicator, BorderLayout.WEST);
 
@@ -984,10 +882,10 @@ public class DashboardWindow extends JFrame {
             inner.setOpaque(false);
             lblIcon = new JLabel(icon);
             lblIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 17));
-            lblIcon.setForeground(new Color(226, 232, 240));
+            lblIcon.setForeground(UITheme.PRIMARY_LIGHT);
             lblText = new JLabel(text);
-            lblText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            lblText.setForeground(new Color(226, 232, 240));
+            lblText.setFont(UITheme.FONT_BODY);
+            lblText.setForeground(UITheme.PRIMARY_LIGHT);
             inner.add(lblIcon); inner.add(lblText);
             add(inner, BorderLayout.CENTER);
 
@@ -1002,13 +900,12 @@ public class DashboardWindow extends JFrame {
         }
 
         public void addActionListener(ActionListener al) { listenerList.add(ActionListener.class, al); }
-        public String getTextLabel() { return lblText.getText(); }
 
         public void setActive(boolean a) {
             indicator.setVisible(a);
-            Color fg = a ? Color.WHITE : new Color(226, 232, 240);
+            Color fg = a ? Color.WHITE : UITheme.PRIMARY_LIGHT;
             lblText.setForeground(fg); lblIcon.setForeground(fg);
-            current = a ? new Color(26, 32, 44) : base;
+            current = a ? UITheme.SIDEBAR_HOVER : base;
             repaint();
         }
 

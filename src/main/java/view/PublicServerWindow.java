@@ -36,6 +36,8 @@ public class PublicServerWindow extends JFrame {
     private JDateChooser            dateChooserAdmission;
     private JTextField              txtMonthlySalary;
 
+    private boolean modoEdicion = false; // true cuando se edita un servidor existente
+
     public PublicServerWindow() {
         serverDAO = new PublicServerDAO();
         UITheme.applyGlobal();
@@ -60,20 +62,19 @@ public class PublicServerWindow extends JFrame {
     private JPanel buildHeader() {
         JPanel header = UITheme.windowHeader("RF-01 — Planta de Personal", "Gestión de servidores públicos activos");
 
-        // Botones de acción en el extremo derecho del header
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         btnPanel.setOpaque(false);
 
-        JButton btnNuevo    = UITheme.secondaryButton("+ Nuevo");
+        JButton btnNuevo    = UITheme.secondaryButton("Nuevo");
         JButton btnGuardar  = UITheme.primaryButton("Guardar");
         JButton btnBaja     = UITheme.dangerButton("Dar de baja");
-        JButton btnRefresh  = UITheme.ghostButton("↺ Actualizar");
+        JButton btnRefresh  = UITheme.ghostButton(" Actualizar");
 
-        btnNuevo.setForeground(Color.WHITE);
+        btnNuevo.setForeground(Color.BLACK);
         btnNuevo.addActionListener(e -> limpiarFormulario());
         btnGuardar.addActionListener(e -> guardarServidor());
         btnBaja.addActionListener(e -> darDeBaja());
-        btnRefresh.setForeground(new Color(0xbb, 0xe5, 0xc4));
+        btnRefresh.setForeground(new Color(57, 89, 63));
         btnRefresh.addActionListener(e -> cargarServidores());
 
         btnPanel.add(btnRefresh);
@@ -86,16 +87,14 @@ public class PublicServerWindow extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // CONTENIDO PRINCIPAL (SplitPane formulario | tabla)
+    // CONTENIDO PRINCIPAL
     // ─────────────────────────────────────────────────────────────────────
     private JSplitPane buildContent() {
-        // ── Formulario ──
         JScrollPane scrollForm = new JScrollPane(buildForm());
         scrollForm.setBorder(null);
         scrollForm.setPreferredSize(new Dimension(400, 600));
         scrollForm.getVerticalScrollBar().setUI(new UITheme.MinimalScrollBarUI());
 
-        // ── Tabla ──
         JPanel tablePanel = new JPanel(new BorderLayout(0, UITheme.PAD_SM));
         tablePanel.setBackground(UITheme.BG_SOFT);
         tablePanel.setBorder(new EmptyBorder(UITheme.PAD, UITheme.PAD, UITheme.PAD, UITheme.PAD));
@@ -157,7 +156,6 @@ public class PublicServerWindow extends JFrame {
         card.add(UITheme.sectionLabel("Datos del Servidor"));
         card.add(Box.createVerticalStrut(UITheme.PAD));
 
-        // Campos
         txtIdNumber        = UITheme.styledInput("");
         txtFirstName       = UITheme.styledInput("");
         txtLastName        = UITheme.styledInput("");
@@ -258,13 +256,14 @@ public class PublicServerWindow extends JFrame {
         try {
             PublicServer srv = serverDAO.findByIdNumber(idNumber);
             if (srv != null) fillForm(srv);
-            else UITheme.showDialog(this, "Información", "Servidor no encontrado: " + idNumber);
+            else showDialog(this, "Información", "Servidor no encontrado: " + idNumber);
         } catch (Exception e) {
             UITheme.showError(this, "Error al cargar servidor: " + e.getMessage());
         }
     }
 
     private void fillForm(PublicServer srv) {
+        modoEdicion = true;
         txtIdNumber.setText(srv.getIdNumber());
         txtIdNumber.setEditable(false);
         txtFirstName.setText(nvl(srv.getFirstName()));
@@ -284,6 +283,7 @@ public class PublicServerWindow extends JFrame {
     }
 
     private void limpiarFormulario() {
+        modoEdicion = false;
         txtIdNumber.setText(""); txtIdNumber.setEditable(true);
         txtFirstName.setText(""); txtLastName.setText("");
         dateChooserBirth.setDate(null);
@@ -303,30 +303,65 @@ public class PublicServerWindow extends JFrame {
             if (txtFirstName.getText().trim().isEmpty()) {
                 UITheme.showWarning(this, "El nombre es obligatorio."); return;
             }
-            PublicServer srv = new PublicServer();
-            srv.setIdNumber(txtIdNumber.getText().trim());
-            srv.setFirstName(txtFirstName.getText().trim());
-            srv.setLastName(txtLastName.getText().trim());
-            srv.setGender((String) comboGender.getSelectedItem());
-            srv.setCivilStatus((String) comboCivilStatus.getSelectedItem());
-            srv.setBloodType((String) comboBloodType.getSelectedItem());
-            srv.setPhone(txtPhone.getText().trim());
-            srv.setEmail(txtEmail.getText().trim());
-            srv.setPositionCode(txtPositionCode.getText().trim());
-            srv.setVinculationType(txtVinculationType.getText().trim());
-            srv.setActive(true);
-            if (dateChooserBirth.getDate()     != null)
-                srv.setBirthDate(dateChooserBirth.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-            if (dateChooserAdmission.getDate() != null)
-                srv.setAdmissionDate(dateChooserAdmission.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-            if (!txtMonthlySalary.getText().isEmpty()) {
-                try { srv.setMonthlySalary(Double.parseDouble(txtMonthlySalary.getText().trim())); }
-                catch (NumberFormatException ex) { UITheme.showWarning(this, "El salario debe ser un número válido."); return; }
+
+            if (modoEdicion) {
+                // ── MODO EDICIÓN: cargar entidad existente y actualizarla ──
+                PublicServer srv = serverDAO.findByIdNumber(txtIdNumber.getText().trim());
+                if (srv == null) {
+                    UITheme.showError(this, "No se encontró el servidor para actualizar."); return;
+                }
+                srv.setFirstName(txtFirstName.getText().trim());
+                srv.setLastName(txtLastName.getText().trim());
+                srv.setGender((String) comboGender.getSelectedItem());
+                srv.setCivilStatus((String) comboCivilStatus.getSelectedItem());
+                srv.setBloodType((String) comboBloodType.getSelectedItem());
+                srv.setPhone(txtPhone.getText().trim());
+                srv.setEmail(txtEmail.getText().trim());
+                srv.setPositionCode(txtPositionCode.getText().trim());
+                srv.setVinculationType(txtVinculationType.getText().trim());
+                if (dateChooserBirth.getDate() != null)
+                    srv.setBirthDate(dateChooserBirth.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                if (dateChooserAdmission.getDate() != null)
+                    srv.setAdmissionDate(dateChooserAdmission.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                if (!txtMonthlySalary.getText().isEmpty()) {
+                    try { srv.setMonthlySalary(Double.parseDouble(txtMonthlySalary.getText().trim())); }
+                    catch (NumberFormatException ex) { UITheme.showWarning(this, "El salario debe ser un número válido."); return; }
+                }
+                serverDAO.update(srv);
+                UITheme.showSuccess(this, "Servidor actualizado correctamente.");
+
+            } else {
+                // ── MODO NUEVO: verificar que no exista y persistir ──
+                if (serverDAO.findByIdNumber(txtIdNumber.getText().trim()) != null) {
+                    UITheme.showWarning(this, "Ya existe un servidor con esa cédula. Selecciónalo de la tabla para editarlo."); return;
+                }
+                PublicServer srv = new PublicServer();
+                srv.setIdNumber(txtIdNumber.getText().trim());
+                srv.setFirstName(txtFirstName.getText().trim());
+                srv.setLastName(txtLastName.getText().trim());
+                srv.setGender((String) comboGender.getSelectedItem());
+                srv.setCivilStatus((String) comboCivilStatus.getSelectedItem());
+                srv.setBloodType((String) comboBloodType.getSelectedItem());
+                srv.setPhone(txtPhone.getText().trim());
+                srv.setEmail(txtEmail.getText().trim());
+                srv.setPositionCode(txtPositionCode.getText().trim());
+                srv.setVinculationType(txtVinculationType.getText().trim());
+                srv.setActive(true);
+                if (dateChooserBirth.getDate() != null)
+                    srv.setBirthDate(dateChooserBirth.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                if (dateChooserAdmission.getDate() != null)
+                    srv.setAdmissionDate(dateChooserAdmission.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                if (!txtMonthlySalary.getText().isEmpty()) {
+                    try { srv.setMonthlySalary(Double.parseDouble(txtMonthlySalary.getText().trim())); }
+                    catch (NumberFormatException ex) { UITheme.showWarning(this, "El salario debe ser un número válido."); return; }
+                }
+                serverDAO.save(srv);
+                UITheme.showSuccess(this, "Servidor guardado correctamente.");
             }
-            serverDAO.save(srv);
-            UITheme.showSuccess(this, "Servidor guardado correctamente.");
+
             limpiarFormulario();
             cargarServidores();
+
         } catch (Exception e) {
             UITheme.showError(this, "Error al guardar: " + e.getMessage());
         }
@@ -348,7 +383,6 @@ public class PublicServerWindow extends JFrame {
         }
     }
 
-    // ── Util: dialog genérico de info ─────────────────────────────────────
     private void showDialog(Component parent, String title, String msg) {
         JOptionPane.showMessageDialog(parent, msg, title, JOptionPane.INFORMATION_MESSAGE);
     }

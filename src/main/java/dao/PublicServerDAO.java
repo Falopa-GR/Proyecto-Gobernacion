@@ -157,7 +157,19 @@ public class PublicServerDAO extends GenericDao<PublicServer> {
             em.close();
         }
     }
-
+    public void update(PublicServer server) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            em.merge(server);
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
     // ----------------------------------------------------------------
     // RF-07: Conteo para el dashboard
     // ----------------------------------------------------------------
