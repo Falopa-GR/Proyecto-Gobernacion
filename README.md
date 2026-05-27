@@ -169,5 +169,31 @@ Hibernate creará automáticamente todas las tablas al iniciar (`hbm2ddl.auto=up
 
 ---
 
+## Imagenes Funcionalidad
 
+Login
+<img width="454" height="530" alt="image" src="https://github.com/user-attachments/assets/6b122f6d-1a37-4f62-9b84-47d2a950b154" />
 
+Dashboard
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/ce27cb11-77c6-4fd2-bab3-a5e2773272d8" />
+
+Planta Personal
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/3ddd8302-54f6-4471-9ef3-967c47f678c4" />
+
+Situaciones Administrativas
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/00e10593-48f5-4309-9741-701ecc3ae66e" />
+
+Control de Vacaciones
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/92827d95-14af-4fb3-9d5b-43f5a2d68425" />
+
+Situaciones Hoy
+<img width="1365" height="765" alt="image" src="https://github.com/user-attachments/assets/514494b6-c85e-4de9-a623-aaa1d7632776" />
+
+Alerta Vacaciones
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/56d04738-53db-44d6-b54a-b9acce66a662" />
+
+Historial
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/b4ab7375-9a9e-470b-b549-fbe49969c298" />
+
+Reportes
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/c151e1a4-4060-4c35-af43-c8d275af2be2" />
